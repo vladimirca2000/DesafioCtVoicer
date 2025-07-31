@@ -17,15 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Bot\Commands\" />
-    <Folder Include="Features\Bot\Events\" />
-    <Folder Include="Features\Bot\Queries\" />
-    <Folder Include="Features\Chat\Commands\" />
-    <Folder Include="Features\Chat\Events\" />
-    <Folder Include="Features\Chat\Queries\" />
-    <Folder Include="Features\Users\Commands\" />
-    <Folder Include="Features\Users\Queries\" />
-    <Folder Include="Services\" />
+    <Folder Include="Features\Users\Commands\CreateUser\" />
+    <Folder Include="Features\Users\Commands\UpdateUserStatus\" />
+    <Folder Include="Features\Users\Queries\GetUserById\" />
+    <Folder Include="Features\Users\Queries\GetUserSessions\" />
   </ItemGroup>
 
   <PropertyGroup>

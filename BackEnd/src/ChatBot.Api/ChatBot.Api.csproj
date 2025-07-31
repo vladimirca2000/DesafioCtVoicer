@@ -24,11 +24,4 @@
     <ProjectReference Include="..\ChatBot.Shared\ChatBot.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Hubs\" />
-    <Folder Include="Middleware\" />
-    <Folder Include="Filters\" />
-    <Folder Include="Extensions\" />
-  </ItemGroup>
-
 </Project>

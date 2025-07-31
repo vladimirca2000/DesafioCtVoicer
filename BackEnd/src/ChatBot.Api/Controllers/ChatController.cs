@@ -1,9 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using ChatBot.Application.Features.Chat.StartChatSession;
-using ChatBot.Application.Features.Chat.SendMessage; // Adicionar este using
 using System.Net; // Para HttpStatusCode
-using System.Linq; // Para o .Any()
+using System.Linq;
+using ChatBot.Application.Features.Chat.Commands.StartChatSession;
+using ChatBot.Application.Features.Chat.Commands.SendMessage;
+using ChatBot.Application.Features; // Para o .Any()
 
 namespace ChatBot.Api.Controllers;
 
