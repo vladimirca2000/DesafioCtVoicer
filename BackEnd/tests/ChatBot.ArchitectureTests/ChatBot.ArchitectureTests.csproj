@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
@@ -18,8 +20,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\ChatBot.Api\ChatBot.Api.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\ChatBot.Api\ChatBot.Api.csproj" />
+		<ProjectReference Include="..\..\src\ChatBot.Application\ChatBot.Application.csproj" />
+		<ProjectReference Include="..\..\src\ChatBot.Infrastructure\ChatBot.Infrastructure.csproj" />
+		<ProjectReference Include="..\..\src\ChatBot.Domain\ChatBot.Domain.csproj" />
+		<ProjectReference Include="..\..\src\ChatBot.Shared\ChatBot.Shared.csproj" />
+	</ItemGroup>
+
+	
 
 </Project>

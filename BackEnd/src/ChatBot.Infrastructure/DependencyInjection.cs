@@ -2,6 +2,7 @@
 using ChatBot.Domain.Repositories;
 using ChatBot.Infrastructure.Data;
 using ChatBot.Infrastructure.Repositories;
+using ChatBot.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,14 +30,14 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Repositories
-        services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>)); // Registro do repositório base
+        services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IBotResponseRepository, BotResponseRepository>();
 
-        // Services (serão implementados depois)
-        // services.AddScoped<ISignalRChatService, SignalRChatService>();
+        // Services (Implementações concretas)
+        //services.AddScoped<ISignalRChatService, SignalRChatService>(); 
 
         return services;
     }

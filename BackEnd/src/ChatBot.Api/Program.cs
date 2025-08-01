@@ -1,5 +1,10 @@
+using ChatBot.Api.Hubs;
 using ChatBot.Application;
+using ChatBot.Application.Common.Interfaces;
 using ChatBot.Infrastructure;
+using ChatBot.Api.Services;
+using ChatBot.Application.Common.Interfaces;
+using ChatBot.Infrastructure.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +39,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Registro do serviço SignalR, agora que está na camada de API
+builder.Services.AddScoped<ISignalRChatService, SignalRChatService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -49,7 +57,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // SignalR Hub
-// app.MapHub<ChatHub>("/chathub");
+app.MapHub<ChatHub>("/chathub");
 
 try
 {

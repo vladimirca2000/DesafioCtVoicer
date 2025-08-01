@@ -16,13 +16,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Users\Commands\CreateUser\" />
-    <Folder Include="Features\Users\Commands\UpdateUserStatus\" />
-    <Folder Include="Features\Users\Queries\GetUserById\" />
-    <Folder Include="Features\Users\Queries\GetUserSessions\" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
