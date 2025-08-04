@@ -1,12 +1,12 @@
 ﻿namespace ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
 
 /// <summary>
-/// Resposta gerada pelo bot.
+/// Resposta do comando de processamento de mensagem do usuário pelo bot.
 /// </summary>
 public record ProcessUserMessageResponse
 {
     public Guid MessageId { get; init; }
     public Guid ChatSessionId { get; init; }
-    public string BotResponseContent { get; init; } = string.Empty;
+    public string BotMessageContent { get; init; } = string.Empty; // O conteúdo da resposta do bot (string para o DTO de saída)
     public DateTime SentAt { get; init; }
 }

@@ -6,7 +6,8 @@ using ChatBot.Application.Features.Users.Commands.UpdateUserStatus;
 using ChatBot.Application.Features.Users.Commands.DeleteUser;
 using ChatBot.Application.Features.Users.Queries.GetUserById;
 using ChatBot.Application.Features.Users.Queries.GetUserSessions;
-using ChatBot.Application.Common.Models; // Para Result<T>
+using ChatBot.Application.Common.Models; // Necessário para Result<T> nos retornos de MediatR.Send()
+using System.Collections.Generic; // Necessário para IEnumerable
 
 namespace ChatBot.Api.Controllers;
 
@@ -29,19 +30,13 @@ public class UsersController : ControllerBase
     /// <returns>Detalhes do usuário criado.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(CreateUserResponse), (int)HttpStatusCode.Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)] // Para validação ou BusinessRuleException
+    [ProducesResponseType((int)HttpStatusCode.Conflict)] // Se o email já existe (poderia ser tratado como BusinessRule)
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)] // Para erros genéricos
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return StatusCode((int)HttpStatusCode.Created, result.Value);
-        }
-
-        // Se o seu ExceptionHandlingMiddleware já lida com ValidationException,
-        // ele converterá isso para BadRequest. Aqui, tratamos falhas específicas.
-        return BadRequest(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return StatusCode((int)HttpStatusCode.Created, result.Value);
     }
 
     /// <summary>
@@ -53,8 +48,9 @@ public class UsersController : ControllerBase
     /// <returns>Detalhes do status atualizado do usuário.</returns>
     [HttpPut("{userId}/status")]
     [ProducesResponseType(typeof(UpdateUserStatusResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> UpdateUserStatus(Guid userId, [FromBody] UpdateUserStatusCommand command, CancellationToken cancellationToken)
     {
         // Garante que o ID da rota corresponda ao ID do corpo, se o comando o incluir
@@ -64,19 +60,7 @@ public class UsersController : ControllerBase
         }
 
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        // Exemplo de tratamento mais específico para NotFound
-        if (result.Error?.Contains("não encontrado") ?? false)
-        {
-            return NotFound(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
-        }
-
-        return BadRequest(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return Ok(result.Value);
     }
 
     /// <summary>
@@ -88,23 +72,13 @@ public class UsersController : ControllerBase
     [HttpDelete("{userId}")]
     [ProducesResponseType(typeof(DeleteUserResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken cancellationToken)
     {
         var command = new DeleteUserCommand { UserId = userId };
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        if (result.Error?.Contains("não encontrado") ?? false)
-        {
-            return NotFound(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
-        }
-
-        return BadRequest(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return Ok(result.Value);
     }
 
     /// <summary>
@@ -116,17 +90,12 @@ public class UsersController : ControllerBase
     [HttpGet("{userId}")]
     [ProducesResponseType(typeof(UserDetailDto), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> GetUserById(Guid userId, CancellationToken cancellationToken)
     {
         var query = new GetUserByIdQuery { UserId = userId };
         var result = await _mediator.Send(query, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        return NotFound(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return Ok(result.Value);
     }
 
     /// <summary>
@@ -138,16 +107,11 @@ public class UsersController : ControllerBase
     [HttpGet("{userId}/sessions")]
     [ProducesResponseType(typeof(IEnumerable<UserSessionDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> GetUserSessions(Guid userId, CancellationToken cancellationToken)
     {
         var query = new GetUserSessionsQuery { UserId = userId };
         var result = await _mediator.Send(query, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        return NotFound(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return Ok(result.Value);
     }
 }

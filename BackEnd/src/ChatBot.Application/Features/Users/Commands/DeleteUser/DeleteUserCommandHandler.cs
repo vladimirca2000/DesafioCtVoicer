@@ -2,7 +2,7 @@
 using ChatBot.Application.Common.Models;
 using ChatBot.Application.Common.Interfaces;
 using ChatBot.Domain.Repositories;
-using ChatBot.Application.Common.Exceptions;
+using ChatBot.Application.Common.Exceptions; // Para NotFoundException
 
 namespace ChatBot.Application.Features.Users.Commands.DeleteUser;
 
@@ -22,21 +22,15 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
 
     public async Task<Result<DeleteUserResponse>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        // 1. Verificar se o usuário existe e não está já logicamente deletado
-        // Precisamos ignorar o filtro global para verificar usuários já deletados se quisermos restaurar ou ter certeza.
-        // Mas para um delete comum, GetByIdAsync já exclui deletados, então se retornar null, é porque não existe ou já está deletado.
+        // 1. Verificar se o usuário existe (GetByIdAsync já considera o Global Query Filter)
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user == null)
         {
             // Poderíamos buscar com IgnoreQueryFilters para dar uma mensagem mais específica
-            var userCheck = await _userRepository.GetAllAsync(cancellationToken); // Exemplo, buscar todos e filtrar
-            var existingDeletedUser = userCheck.FirstOrDefault(u => u.Id == request.UserId && u.IsDeleted);
-
-            if (existingDeletedUser != null)
-            {
-                return Result<DeleteUserResponse>.Failure($"Usuário com ID '{request.UserId}' já está logicamente deletado.");
-            }
-            return Result<DeleteUserResponse>.Failure($"Usuário com ID '{request.UserId}' não encontrado.");
+            // Se o GetByIdAsync já exclui deletados, então se retornar null,
+            // é porque não existe ou já está deletado (e o Global Query Filter escondeu).
+            // Para simplicidade, trataremos como NotFound.
+            throw new NotFoundException("Usuário", request.UserId);
         }
 
         // 2. Realizar o soft delete

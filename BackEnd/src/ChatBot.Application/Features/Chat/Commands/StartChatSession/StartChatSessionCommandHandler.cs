@@ -4,6 +4,8 @@ using ChatBot.Domain.Entities;
 using ChatBot.Domain.Repositories;
 using ChatBot.Domain.Enums;
 using ChatBot.Application.Common.Interfaces;
+using ChatBot.Application.Common.Exceptions;
+using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
 
 namespace ChatBot.Application.Features.Chat.Commands.StartChatSession;
 
@@ -29,14 +31,13 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
     public async Task<Result<StartChatSessionResponse>> Handle(StartChatSessionCommand request, CancellationToken cancellationToken)
     {
         User user;
-
         // Tentar encontrar o usuário existente ou criar um novo
         if (request.UserId.HasValue)
         {
             user = await _userRepository.GetByIdAsync(request.UserId.Value, cancellationToken);
             if (user == null)
             {
-                return Result<StartChatSessionResponse>.Failure("Usuário não encontrado.");
+                throw new NotFoundException("Usuário", request.UserId.Value);
             }
         }
         else // Criar um novo usuário se UserId não foi fornecido e UserName sim
@@ -44,7 +45,7 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
             user = new User
             {
                 Name = request.UserName!, // UserName é garantido pelo validador se UserId for nulo
-                Email = $"{Guid.NewGuid()}@temp.com", // Email temporário para usuários anônimos
+                Email = Email.Create($"{Guid.NewGuid()}@temp.com"), // Cria um Email VO para usuários anônimos
                 IsActive = true
             };
             await _userRepository.AddAsync(user, cancellationToken);
@@ -61,12 +62,15 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
         };
         await _chatSessionRepository.AddAsync(chatSession, cancellationToken);
 
+        // Criar o Value Object MessageContent para a mensagem inicial
+        var initialMessageContent = MessageContent.Create(request.InitialMessageContent!);
+
         // Adicionar a mensagem inicial
         var initialMessage = new Message
         {
             ChatSessionId = chatSession.Id,
             UserId = user.Id,
-            Content = request.InitialMessageContent!, // Conteúdo garantido pelo validador
+            Content = initialMessageContent, // Usa o Value Object MessageContent
             Type = MessageType.Text,
             IsFromBot = false,
             SentAt = DateTime.UtcNow,
@@ -83,7 +87,7 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
             ChatSessionId = chatSession.Id,
             UserId = user.Id,
             StartedAt = chatSession.StartedAt,
-            InitialMessage = initialMessage.Content
+            InitialMessage = initialMessage.Content.Value // Retorna a string do conteúdo no DTO de resposta
         });
     }
 }

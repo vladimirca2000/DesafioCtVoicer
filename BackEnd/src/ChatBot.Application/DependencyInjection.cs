@@ -1,10 +1,10 @@
-﻿using ChatBot.Application.Common.Behaviors;
-using ChatBot.Application.Features.Bot.Factories;
-using ChatBot.Application.Features.Bot.Strategies;
+﻿using System.Reflection;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
+using ChatBot.Application.Common.Behaviors;
+using ChatBot.Application.Features.Bot.Factories; // Para registrar a fábrica
+using ChatBot.Application.Features.Bot.Strategies; // Para registrar as estratégias
 
 namespace ChatBot.Application;
 
@@ -24,14 +24,12 @@ public static class DependencyInjection
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
 
-        // Registro das Estratégias de Resposta do Bot
-        // Devem ser registradas como Transient para que uma nova instância seja criada por requisição,
-        // garantindo que elas não mantenham estado entre diferentes chamadas.
-        services.AddTransient<IBotResponseStrategy, ExitCommandStrategy>();
-        services.AddTransient<IBotResponseStrategy, RandomResponseStrategy>();
-        services.AddTransient<IBotResponseStrategy, KeywordBasedResponseStrategy>();
+        // Estratégias de resposta do Bot
+        services.AddScoped<IBotResponseStrategy, ExitCommandStrategy>();
+        services.AddScoped<IBotResponseStrategy, KeywordBasedResponseStrategy>();
+        services.AddScoped<IBotResponseStrategy, RandomResponseStrategy>(); // Deve ser o fallback
 
-        // Registro da Fábrica de Estratégias do Bot
+        // Fábrica de estratégias do Bot (Scoped para evitar "captive dependency")
         services.AddScoped<IBotResponseStrategyFactory, BotResponseStrategyFactory>();
 
         return services;

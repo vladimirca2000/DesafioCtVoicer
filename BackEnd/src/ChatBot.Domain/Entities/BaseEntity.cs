@@ -1,4 +1,6 @@
 ﻿using ChatBot.Domain.Interfaces;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ChatBot.Domain.Entities;
 
@@ -13,7 +15,7 @@ public abstract class BaseEntity : ISoftDeletable, IAuditable
     public string CreatedBy { get; set; } = string.Empty;
     public string? UpdatedBy { get; set; }
 
-    // Propriedade para armazenar eventos de domínio (não será mapeada para o banco de dados)
+    // --- Suporte a Domain Events ---
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
@@ -37,6 +39,7 @@ public abstract class BaseEntity : ISoftDeletable, IAuditable
 
     /// <summary>
     /// Limpa todos os eventos de domínio da lista.
+    /// Chamado após a publicação dos eventos.
     /// </summary>
     public void ClearDomainEvents()
     {

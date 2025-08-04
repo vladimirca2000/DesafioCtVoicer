@@ -13,6 +13,7 @@ public class StartChatSessionCommandValidator : AbstractValidator<StartChatSessi
             .WithMessage("O nome de usuário é obrigatório se nenhum ID de usuário for fornecido.");
 
         // Mensagem inicial não pode ser vazia
+        // A validação completa de tamanho e conteúdo é feita no Value Object MessageContent.
         RuleFor(x => x.InitialMessageContent)
             .NotEmpty()
             .WithMessage("A mensagem inicial não pode ser vazia.");

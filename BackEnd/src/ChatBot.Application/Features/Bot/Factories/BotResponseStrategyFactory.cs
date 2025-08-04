@@ -1,67 +1,48 @@
-﻿using ChatBot.Application.Features.Bot.Strategies;
-using Microsoft.Extensions.Logging; // Para logar a decisão da fábrica
+﻿using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
+using ChatBot.Application.Features.Bot.Strategies;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ChatBot.Application.Features.Bot.Factories;
 
 /// <summary>
-/// Implementação concreta da fábrica de estratégias de resposta do bot.
-/// Responsável por selecionar a estratégia mais adequada com base na mensagem do usuário.
+/// Implementação da fábrica de estratégias de resposta do bot.
+/// Seleciona a estratégia baseada na capacidade de cada uma lidar com o comando.
 /// </summary>
 public class BotResponseStrategyFactory : IBotResponseStrategyFactory
 {
     private readonly IEnumerable<IBotResponseStrategy> _strategies;
-    private readonly ILogger<BotResponseStrategyFactory> _logger;
 
-    public BotResponseStrategyFactory(IEnumerable<IBotResponseStrategy> strategies,
-                                      ILogger<BotResponseStrategyFactory> logger)
+    public BotResponseStrategyFactory(IEnumerable<IBotResponseStrategy> strategies)
     {
+        // O IEnumerable injetará todas as implementações registradas de IBotResponseStrategy
         _strategies = strategies;
-        _logger = logger;
     }
 
-    public IBotResponseStrategy GetStrategy(string userMessage)
+    public IBotResponseStrategy GetStrategy(ProcessUserMessageCommand command)
     {
-        // Ordem de prioridade para seleção da estratégia:
-        // 1. ExitCommandStrategy (se o comando "sair" for detectado)
-        // 2. KeywordBasedResponseStrategy (se houver palavras-chave correspondentes)
-        // 3. RandomResponseStrategy (como fallback padrão)
+        // Prioridade: ExitCommand > KeywordBased > Random (fallback)
+        // A ordem de registro no DI pode influenciar, mas para maior controle,
+        // pode-se ter uma lista ordenada ou lógica de prioridade aqui.
+        // Por simplicidade, FirstOrDefault que pode lidar. RandomStrategy sempre pode lidar,
+        // então deve ser a última na lista (ou ser explicitamente tratada como fallback).
 
-        // Tentar encontrar a ExitCommandStrategy
-        var exitStrategy = _strategies.OfType<ExitCommandStrategy>().FirstOrDefault();
-        if (exitStrategy != null && userMessage.Trim().Equals("sair", StringComparison.OrdinalIgnoreCase))
+        // Exemplo de lógica de prioridade:
+        if (_strategies.Any(s => s is ExitCommandStrategy && s.CanHandle(command)))
         {
-            _logger.LogInformation("Fábrica selecionou: ExitCommandStrategy");
-            return exitStrategy;
+            return _strategies.First(s => s is ExitCommandStrategy);
         }
-
-        // Tentar encontrar a KeywordBasedResponseStrategy (se o usuário não pediu para sair)
-        var keywordStrategy = _strategies.OfType<KeywordBasedResponseStrategy>().FirstOrDefault();
-        // NOTA: A KeywordBasedResponseStrategy precisa ser capaz de retornar null se não encontrar palavras-chave.
-        // A decisão de qual estratégia usar é da fábrica. A estratégia apenas executa seu comportamento.
-        if (keywordStrategy != null)
-        //if (keywordStrategy != null && keywordStrategy.CanHandle(userMessage)) 
+        if (_strategies.Any(s => s is KeywordBasedResponseStrategy && s.CanHandle(command)))
         {
-            // Poderíamos adicionar aqui uma pré-verificação mais inteligente se a mensagem não for "sair".
-            // Por simplicidade, a GetStrategy vai retornar a KeywordBasedStrategy e ela mesma decide se aplica ou não.
-            // Para uma decisão mais robusta na fábrica, a GetStrategy na IBotResponseStrategy
-            // poderia ter um método 'bool CanHandle(string userMessage)'
-            // Para manter a consistência com o que já fizemos e evitar mudanças nas interfaces,
-            // vamos apenas retornar as estratégias na ordem de prioridade.
-            // A responsabilidade de 'realmente' responder (retornar string ou null) fica com o GenerateResponseAsync.
-
-            _logger.LogInformation("Fábrica selecionou: KeywordBasedResponseStrategy");
-            return keywordStrategy; // Retornamos a estratégia, ela mesma decidirá se tem uma resposta.
+            return _strategies.First(s => s is KeywordBasedResponseStrategy);
         }
+        // Fallback para a estratégia aleatória se nenhuma outra se aplicar
+        return _strategies.First(s => s is RandomResponseStrategy);
 
-        // Se nenhuma das anteriores se aplicar, retornar a RandomResponseStrategy como fallback
-        var randomStrategy = _strategies.OfType<RandomResponseStrategy>().FirstOrDefault();
-        if (randomStrategy == null)
-        {
-            _logger.LogError("RandomResponseStrategy não encontrada. O sistema pode ficar sem respostas padrão.");
-            throw new InvalidOperationException("RandomResponseStrategy não está registrada ou disponível.");
-        }
-
-        _logger.LogInformation("Fábrica selecionou: RandomResponseStrategy (fallback)");
-        return randomStrategy;
+        // Alternativamente, se CanHandle retornar true apenas para uma estratégia,
+        // e RandomResponseStrategy sempre retornar true, a linha abaixo funcionaria
+        // desde que RandomResponseStrategy seja a última verificada (ex: se as outras falharem o CanHandle)
+        // return _strategies.FirstOrDefault(s => s.CanHandle(command))
+        //        ?? throw new InvalidOperationException("No suitable bot response strategy found.");
     }
 }

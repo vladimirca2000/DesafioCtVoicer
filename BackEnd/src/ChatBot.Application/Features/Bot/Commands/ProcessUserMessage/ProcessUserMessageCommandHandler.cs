@@ -1,36 +1,33 @@
 ﻿using MediatR;
-using ChatBot.Application.Common.Interfaces;
 using ChatBot.Application.Common.Models;
+using ChatBot.Application.Common.Interfaces;
 using ChatBot.Application.Features.Bot.Factories;
 using ChatBot.Domain.Repositories;
 using ChatBot.Domain.Entities;
 using ChatBot.Domain.Enums;
-using ChatBot.Domain.Events;
+using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
+using ChatBot.Application.Common.Exceptions; // Para NotFoundException
 
 namespace ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
 
-// Remover as definições de 'ProcessUserMessageCommand' e 'ProcessUserMessageResponse' deste arquivo.
-
-public class ProcessUserCommandValidator // << ATENÇÃO: Renomeie esta classe para ProcessUserMessageCommandValidator
-{
-    // ... conteúdo de validação, se houver.
-    // Se ainda não tiver um validador, ele pode ser um arquivo separado: ProcessUserMessageCommandValidator.cs
-}
-
+/// <summary>
+/// Manipulador para o comando ProcessUserMessageCommand.
+/// Orquestra a lógica de resposta do bot.
+/// </summary>
 public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessageCommand, Result<ProcessUserMessageResponse>>
 {
-    private readonly IBotResponseStrategyFactory _strategyFactory;
+    private readonly IBotResponseStrategyFactory _botResponseStrategyFactory;
     private readonly IMessageRepository _messageRepository;
     private readonly IChatSessionRepository _chatSessionRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public ProcessUserMessageCommandHandler(
-        IBotResponseStrategyFactory strategyFactory,
+        IBotResponseStrategyFactory botResponseStrategyFactory,
         IMessageRepository messageRepository,
         IChatSessionRepository chatSessionRepository,
         IUnitOfWork unitOfWork)
     {
-        _strategyFactory = strategyFactory;
+        _botResponseStrategyFactory = botResponseStrategyFactory;
         _messageRepository = messageRepository;
         _chatSessionRepository = chatSessionRepository;
         _unitOfWork = unitOfWork;
@@ -38,49 +35,43 @@ public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessa
 
     public async Task<Result<ProcessUserMessageResponse>> Handle(ProcessUserMessageCommand request, CancellationToken cancellationToken)
     {
+        // 1. Validar se a sessão de chat existe
         var chatSession = await _chatSessionRepository.GetByIdAsync(request.ChatSessionId, cancellationToken);
         if (chatSession == null)
         {
-            return Result<ProcessUserMessageResponse>.Failure("Sessão de chat não encontrada para processamento do bot.");
+            throw new NotFoundException("Sessão de chat não encontrada.");
         }
 
-        var strategy = _strategyFactory.GetStrategy(request.UserMessageContent);
-        var botResponseContent = await strategy.GenerateResponseAsync(request.UserMessageContent, cancellationToken);
+        // 2. Selecionar a estratégia de resposta do bot
+        var strategy = _botResponseStrategyFactory.GetStrategy(request);
 
-        if (string.IsNullOrWhiteSpace(botResponseContent))
-        {
-            botResponseContent = "Desculpe, não entendi a sua solicitação. Poderia reformular?";
-        }
+        // 3. Gerar o conteúdo da resposta do bot usando a estratégia selecionada
+        var botResponseContent = strategy.GenerateResponse(request); // A estratégia retorna MessageContent
 
+        // 4. Criar a entidade Message para a resposta do bot
         var botMessage = new Message
         {
             ChatSessionId = request.ChatSessionId,
-            UserId = null,
-            Content = botResponseContent,
+            UserId = null, // Mensagem do bot, sem UserId associado diretamente
+            Content = botResponseContent, // Conteúdo já é MessageContent, não precisa de conversão explícita
             Type = MessageType.BotResponse,
             IsFromBot = true,
             SentAt = DateTime.UtcNow,
-            CreatedBy = "Bot"
+            CreatedBy = "BotSystem" // Usar um nome de auditoria para o bot
         };
 
+        // 5. Adicionar a mensagem do bot ao repositório
         await _messageRepository.AddAsync(botMessage, cancellationToken);
 
-        botMessage.AddDomainEvent(new MessageSentDomainEvent(
-            botMessage.Id,
-            botMessage.ChatSessionId,
-            botMessage.UserId,
-            botMessage.Content,
-            botMessage.SentAt,
-            botMessage.IsFromBot
-        ));
-
+        // 6. Salvar as mudanças
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // 7. Retornar a resposta
         return Result<ProcessUserMessageResponse>.Success(new ProcessUserMessageResponse
         {
             MessageId = botMessage.Id,
             ChatSessionId = botMessage.ChatSessionId,
-            BotResponseContent = botMessage.Content,
+            BotMessageContent = botMessage.Content.Value, // Acessa o valor string do MessageContent para o DTO
             SentAt = botMessage.SentAt
         });
     }

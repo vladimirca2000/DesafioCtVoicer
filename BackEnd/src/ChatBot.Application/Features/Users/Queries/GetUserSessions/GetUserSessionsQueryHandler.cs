@@ -2,7 +2,7 @@
 using ChatBot.Application.Common.Models;
 using ChatBot.Application.Common.Interfaces;
 using ChatBot.Domain.Repositories;
-using ChatBot.Application.Common.Exceptions;
+using ChatBot.Application.Common.Exceptions; // Para NotFoundException
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +28,7 @@ public class GetUserSessionsQueryHandler : IRequestHandler<GetUserSessionsQuery,
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user == null)
         {
-            return Result<IEnumerable<UserSessionDto>>.Failure($"Usuário com ID '{request.UserId}' não encontrado.");
+            throw new NotFoundException("Usuário", request.UserId);
         }
 
         // 2. Obter as sessões de chat do usuário

@@ -1,13 +1,19 @@
-﻿using MediatR;
-using ChatBot.Application.Common.Interfaces;
+﻿// Conteúdo COMPLETO e CORRETO para:
+// C:\Desenvolvimento\DesafioCtVoicer\BackEnd\src\ChatBot.Application\Features\Chat\EventHandlers\ChatSessionEndedEventHandler.cs
+
+using MediatR;
 using ChatBot.Domain.Events;
+using ChatBot.Application.Common.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
+// NAMESPACE CORRETO para esta localização:
 namespace ChatBot.Application.Features.Chat.EventHandlers;
 
 /// <summary>
 /// Manipulador para o evento de domínio ChatSessionEndedDomainEvent.
-/// Notifica os clientes via SignalR sobre o encerramento da sessão.
+/// Notifica os clientes via SignalR quando uma sessão de chat é encerrada.
 /// </summary>
 public class ChatSessionEndedEventHandler : INotificationHandler<ChatSessionEndedDomainEvent>
 {
@@ -22,10 +28,10 @@ public class ChatSessionEndedEventHandler : INotificationHandler<ChatSessionEnde
 
     public async Task Handle(ChatSessionEndedDomainEvent notification, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Domain Event: ChatSessionEndedDomainEvent recebido para ChatSessionId: {ChatSessionId}", notification.ChatSessionId);
+        _logger.LogInformation("Evento ChatSessionEndedDomainEvent recebido para sessão {ChatSessionId}. Motivo: {Reason}", notification.ChatSessionId, notification.Reason);
 
-        await _signalRChatService.NotifyChatSessionEndedAsync(notification.ChatSessionId, notification.EndReason ?? "Sessão encerrada.", cancellationToken);
+        await _signalRChatService.NotifyChatSessionEnded(notification.ChatSessionId, notification.Reason);
 
-        _logger.LogInformation("Notificação de encerramento de sessão enviada via SignalR para a sessão {ChatSessionId}", notification.ChatSessionId);
+        _logger.LogInformation("Notificação de encerramento de sessão enviada via SignalR para sessão {ChatSessionId}.", notification.ChatSessionId);
     }
 }

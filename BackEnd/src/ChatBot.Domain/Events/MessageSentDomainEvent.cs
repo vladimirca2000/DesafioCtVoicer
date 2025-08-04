@@ -1,19 +1,21 @@
-﻿using ChatBot.Domain.Interfaces;
+﻿// Conteúdo COMPLETO e CORRETO para MessageSentDomainEvent.cs
+using ChatBot.Domain.Interfaces;
+using System;
 
 namespace ChatBot.Domain.Events;
 
 /// <summary>
-/// Evento de domínio disparado quando uma mensagem é enviada e persistida com sucesso.
+/// Evento de domínio disparado quando uma mensagem é enviada (salva no banco).
 /// </summary>
-public class MessageSentDomainEvent : IDomainEvent
+public record MessageSentDomainEvent : IDomainEvent
 {
-    public DateTime OccurredOn { get; } = DateTime.UtcNow; // Conforme a interface
-    public Guid MessageId { get; }
-    public Guid ChatSessionId { get; }
-    public Guid? UserId { get; } // ID do usuário remetente (null para bot)
-    public string Content { get; }
-    public DateTime SentAt { get; }
-    public bool IsFromBot { get; }
+    public Guid MessageId { get; init; }
+    public Guid ChatSessionId { get; init; }
+    public Guid? UserId { get; init; } // Pode ser nulo se for mensagem do bot
+    public string Content { get; init; } = string.Empty;
+    public DateTime SentAt { get; init; }
+    public bool IsFromBot { get; init; }
+    public DateTime OccurredOn { get; } = DateTime.UtcNow;
 
     public MessageSentDomainEvent(Guid messageId, Guid chatSessionId, Guid? userId, string content, DateTime sentAt, bool isFromBot)
     {

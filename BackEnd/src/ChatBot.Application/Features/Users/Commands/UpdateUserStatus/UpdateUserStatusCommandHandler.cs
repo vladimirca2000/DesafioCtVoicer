@@ -2,7 +2,7 @@
 using ChatBot.Application.Common.Models;
 using ChatBot.Application.Common.Interfaces;
 using ChatBot.Domain.Repositories;
-using ChatBot.Application.Common.Exceptions;
+using ChatBot.Application.Common.Exceptions; // Para NotFoundException
 
 namespace ChatBot.Application.Features.Users.Commands.UpdateUserStatus;
 
@@ -26,7 +26,7 @@ public class UpdateUserStatusCommandHandler : IRequestHandler<UpdateUserStatusCo
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user == null)
         {
-            return Result<UpdateUserStatusResponse>.Failure($"Usuário com ID '{request.UserId}' não encontrado.");
+            throw new NotFoundException("Usuário", request.UserId);
         }
 
         // 2. Atualizar o status

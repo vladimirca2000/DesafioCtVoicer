@@ -1,25 +1,29 @@
-﻿using ChatBot.Shared.DTOs.Chat; // Usar o DTO para a mensagem
+﻿// Conteúdo COMPLETO e CORRETO para ISignalRChatService.cs
+using System;
+using System.Threading.Tasks;
 
 namespace ChatBot.Application.Common.Interfaces;
 
 /// <summary>
-/// Contrato para o serviço de notificação em tempo real via SignalR.
+/// Contrato para o serviço de comunicação de chat em tempo real via SignalR.
 /// </summary>
 public interface ISignalRChatService
 {
     /// <summary>
-    /// Envia uma nova mensagem de chat para todos os clientes conectados a uma sessão específica.
+    /// Envia uma nova mensagem para todos os clientes em uma sessão de chat específica.
     /// </summary>
-    /// <param name="chatSessionId">O ID da sessão de chat.</param>
-    /// <param name="message">O DTO da mensagem a ser enviada.</param>
-    /// <param name="cancellationToken">Token de cancelamento.</param>
-    Task SendMessageToChatSessionAsync(Guid chatSessionId, ChatMessageDto message, CancellationToken cancellationToken);
+    /// <param name="chatSessionId">ID da sessão de chat.</param>
+    /// <param name="messageContent">Conteúdo da mensagem.</param>
+    /// <param name="isBot">Indica se a mensagem é do bot.</param>
+    /// <param name="userId">ID do usuário (nulo se for do bot).</param>
+    /// <param name="messageId">ID único da mensagem.</param>
+    /// <param name="sentAt">Timestamp da mensagem.</param>
+    Task SendMessageToChatSession(Guid chatSessionId, string messageContent, bool isBot, Guid? userId, Guid messageId, DateTime sentAt);
 
     /// <summary>
-    /// Notifica os clientes sobre o encerramento de uma sessão de chat.
+    /// Notifica os clientes que uma sessão de chat foi encerrada.
     /// </summary>
-    /// <param name="chatSessionId">O ID da sessão de chat.</param>
-    /// <param name="reason">O motivo do encerramento da sessão.</param>
-    /// <param name="cancellationToken">Token de cancelamento.</param>
-    Task NotifyChatSessionEndedAsync(Guid chatSessionId, string reason, CancellationToken cancellationToken);
+    /// <param name="chatSessionId">ID da sessão de chat.</param>
+    /// <param name="reason">Motivo do encerramento.</param>
+    Task NotifyChatSessionEnded(Guid chatSessionId, string reason);
 }

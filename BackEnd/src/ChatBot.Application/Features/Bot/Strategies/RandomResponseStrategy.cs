@@ -1,43 +1,45 @@
-﻿using ChatBot.Domain.Enums;
-using ChatBot.Domain.Repositories;
-using Microsoft.Extensions.Logging; // Opcional, para logar a seleção da resposta
+﻿using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
+using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
+using ChatBot.Domain.Repositories; // Necessário para IBotResponseRepository
+using ChatBot.Domain.Enums; // Necessário para BotResponseType
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ChatBot.Application.Features.Bot.Strategies;
 
 /// <summary>
-/// Estratégia que seleciona uma resposta aleatória do bot.
+/// Estratégia de resposta aleatória do bot, geralmente usada como fallback.
 /// </summary>
 public class RandomResponseStrategy : IBotResponseStrategy
 {
     private readonly IBotResponseRepository _botResponseRepository;
-    private readonly ILogger<RandomResponseStrategy> _logger; // Para fins de depuração
+    private readonly Random _random = new Random();
 
-    public RandomResponseStrategy(IBotResponseRepository botResponseRepository,
-                                  ILogger<RandomResponseStrategy> logger)
+    public RandomResponseStrategy(IBotResponseRepository botResponseRepository)
     {
         _botResponseRepository = botResponseRepository;
-        _logger = logger;
     }
 
-    public async Task<string?> GenerateResponseAsync(string userMessage, CancellationToken cancellationToken)
+    public bool CanHandle(ProcessUserMessageCommand command)
     {
-        // Obter todas as respostas de tipo 'Random'
-        var randomResponses = (await _botResponseRepository
-            .GetAllAsync(cancellationToken))
-            .Where(r => r.Type == BotResponseType.Random && r.IsActive)
+        // Esta estratégia pode sempre lidar, servindo como um fallback se nenhuma outra se aplicar.
+        return true;
+    }
+
+    public MessageContent GenerateResponse(ProcessUserMessageCommand command)
+    {
+        var randomResponses = _botResponseRepository
+            .GetAllAsync()
+            .Result // ATENÇÃO: Evite .Result em código assíncrono real.
+            .Where(r => r.Type == BotResponseType.Random)
             .ToList();
 
-        if (!randomResponses.Any())
+        if (randomResponses.Any())
         {
-            _logger.LogWarning("Nenhuma resposta aleatória ativa encontrada no repositório.");
-            return null; // Nenhuma resposta aleatória disponível
+            var randomIndex = _random.Next(randomResponses.Count);
+            return MessageContent.Create(randomResponses[randomIndex].Content);
         }
-
-        // Selecionar uma resposta aleatória da lista
-        var randomIndex = new Random().Next(randomResponses.Count);
-        var selectedResponse = randomResponses[randomIndex];
-
-        _logger.LogInformation("Resposta aleatória selecionada: {Content}", selectedResponse.Content);
-        return selectedResponse.Content;
+        return MessageContent.Create("Olá! Como posso ajudar?"); // Resposta padrão se não houver respostas aleatórias configuradas
     }
 }

@@ -3,6 +3,7 @@ using ChatBot.Application.Common.Models;
 using ChatBot.Application.Common.Interfaces;
 using ChatBot.Domain.Repositories;
 using ChatBot.Application.Common.Exceptions;
+using ChatBot.Domain.ValueObjects; // Necessário para Email (embora não criado aqui, a entidade o usa)
 
 namespace ChatBot.Application.Features.Users.Queries.GetUserById;
 
@@ -21,19 +22,18 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<
     public async Task<Result<UserDetailDto>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
         // 1. Obter o usuário pelo ID
-        // O GetByIdAsync já considera o Global Query Filter, então não trará usuários deletados.
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user == null)
         {
-            return Result<UserDetailDto>.Failure($"Usuário com ID '{request.UserId}' não encontrado ou está inativo/deletado.");
+            throw new NotFoundException("Usuário", request.UserId);
         }
 
-        // 2. Mapear para o DTO
+        // 2. Mapear para o DTO (convertendo o VO Email de volta para string para o DTO de saída)
         var userDetailDto = new UserDetailDto
         {
             Id = user.Id,
             Name = user.Name,
-            Email = user.Email,
+            Email = user.Email.Value, // Acessa o valor string do Value Object Email
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,

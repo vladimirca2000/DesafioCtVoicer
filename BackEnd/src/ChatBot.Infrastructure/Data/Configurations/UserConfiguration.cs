@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ChatBot.Domain.Entities;
+using ChatBot.Domain.ValueObjects; // Necessário para Email
 
 namespace ChatBot.Infrastructure.Data.Configurations;
 
@@ -17,7 +18,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(100);
 
+        // Mapeamento do Value Object Email para string no banco de dados
         builder.Property(x => x.Email)
+            .HasConversion(
+                v => v.Value, // Como salvar no banco (Email VO -> string)
+                v => Email.Create(v) // Como carregar do banco (string -> Email VO)
+            )
             .IsRequired()
             .HasMaxLength(255);
 
@@ -44,11 +50,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.DeletedBy)
             .HasMaxLength(100);
 
-        // Indexes - ✅ Usando aspas duplas corretas para PostgreSQL
-        builder.HasIndex(x => x.Email)
+        // Indexes - Usando aspas duplas corretas para PostgreSQL
+        builder.HasIndex(x => x.Email) // O índice será aplicado à coluna que armazena o valor (string)
             .IsUnique()
             .HasDatabaseName("IX_Users_Email_Unique")
-            .HasFilter(@"""IsDeleted"" = false"); // ✅ Case-sensitive correto
+            .HasFilter(@"""IsDeleted"" = false"); // Case-sensitive correto
 
         builder.HasIndex(x => x.IsDeleted)
             .HasDatabaseName("IX_Users_IsDeleted");

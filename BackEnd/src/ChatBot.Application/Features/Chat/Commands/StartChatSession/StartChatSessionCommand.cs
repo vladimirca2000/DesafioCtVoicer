@@ -8,5 +8,5 @@ public record StartChatSessionCommand : ICommand<Result<StartChatSessionResponse
 {
     public Guid? UserId { get; init; } // Pode ser nulo se for um usuário anônimo
     public string? UserName { get; init; } // Nome do usuário, se não tiver um UserId
-    public string? InitialMessageContent { get; init; } // Mensagem inicial da sessão
+    public string? InitialMessageContent { get; init; } // Permanece string para input da API
 }

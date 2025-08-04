@@ -1,21 +1,21 @@
-﻿using ChatBot.Domain.Interfaces;
+﻿// Conteúdo COMPLETO e CORRETO para ChatSessionEndedDomainEvent.cs
+using ChatBot.Domain.Interfaces;
+using System;
 
 namespace ChatBot.Domain.Events;
 
 /// <summary>
 /// Evento de domínio disparado quando uma sessão de chat é encerrada.
 /// </summary>
-public class ChatSessionEndedDomainEvent : IDomainEvent
+public record ChatSessionEndedDomainEvent : IDomainEvent
 {
+    public Guid ChatSessionId { get; init; }
+    public string Reason { get; init; }
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
-    public Guid ChatSessionId { get; }
-    public DateTime EndedAt { get; }
-    public string? EndReason { get; }
 
-    public ChatSessionEndedDomainEvent(Guid chatSessionId, DateTime endedAt, string? endReason)
+    public ChatSessionEndedDomainEvent(Guid chatSessionId, string reason)
     {
         ChatSessionId = chatSessionId;
-        EndedAt = endedAt;
-        EndReason = endReason;
+        Reason = reason;
     }
 }

@@ -1,31 +1,26 @@
 ﻿using ChatBot.Application.Common.Interfaces;
-using MediatR; // Adicionar este using
+using ChatBot.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Storage;
-using ChatBot.Domain.Entities; // Adicionar este using
+using ChatBot.Domain.Interfaces; // Necessário para IDomainEvent
+using ChatBot.Domain.Entities; // Necessário para BaseEntity
+using System.Linq;
+using System.Collections.Generic;
 
 namespace ChatBot.Infrastructure.Data;
 
 public class UnitOfWork : IUnitOfWork
 {
     private readonly ChatBotDbContext _context;
-    private readonly IMediator _mediator; // Injetar IMediator
     private IDbContextTransaction? _currentTransaction;
 
-    public UnitOfWork(ChatBotDbContext context, IMediator mediator) // Adicionar IMediator ao construtor
+    public UnitOfWork(ChatBotDbContext context)
     {
         _context = context;
-        _mediator = mediator;
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Disparar eventos antes de salvar, mas processá-los após o commit
-        // ou coletá-los e disparar após o save.
-        // A abordagem mais robusta é coletar todos os eventos e dispará-los após o SaveChangesAsync.
-        var result = await _context.SaveChangesAsync(cancellationToken);
-        await DispatchDomainEventsAsync(); // Chamada para o novo método
-
-        return result;
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
@@ -34,6 +29,7 @@ public class UnitOfWork : IUnitOfWork
         {
             return; // Transaction already started
         }
+
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
     }
 
@@ -43,9 +39,11 @@ public class UnitOfWork : IUnitOfWork
         {
             throw new InvalidOperationException("No transaction has been started.");
         }
+
         try
         {
-            await _currentTransaction.CommitAsync(cancellationToken); // O SaveChangesAsync já foi chamado antes do commit aqui.
+            // SaveChangesAsync já foi chamado pelo TransactionBehavior antes do Commit
+            await _currentTransaction.CommitAsync(cancellationToken);
         }
         catch
         {
@@ -76,24 +74,22 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    // Novo método para disparar eventos de domínio
-    private async Task DispatchDomainEventsAsync()
+    // Implementação dos novos métodos para Domain Events
+    public IReadOnlyCollection<IDomainEvent> GetDomainEvents()
     {
-        var domainEntities = _context.ChangeTracker
-            .Entries<BaseEntity>()
-            .Where(x => x.Entity.DomainEvents.Any())
+        // Coleta todos os eventos de domínio das entidades que estão sendo rastreadas pelo DbContext
+        return _context.ChangeTracker.Entries<BaseEntity>()
+            .Where(e => e.Entity.DomainEvents.Any())
+            .SelectMany(e => e.Entity.DomainEvents)
             .ToList();
+    }
 
-        var domainEvents = domainEntities
-            .SelectMany(x => x.Entity.DomainEvents)
-            .ToList();
-
-        domainEntities.ForEach(x => x.Entity.ClearDomainEvents());
-
-        foreach (var domainEvent in domainEvents)
-        {
-            await _mediator.Publish(domainEvent);
-        }
+    public void ClearDomainEvents()
+    {
+        // Limpa os eventos de domínio de todas as entidades rastreadas após a publicação
+        _context.ChangeTracker.Entries<BaseEntity>()
+            .ToList() // .ToList() para evitar modificação da coleção durante a iteração
+            .ForEach(e => e.Entity.ClearDomainEvents());
     }
 
     public void Dispose()
@@ -108,6 +104,7 @@ public class UnitOfWork : IUnitOfWork
         {
             await _currentTransaction.DisposeAsync();
         }
+
         await _context.DisposeAsync();
     }
 }

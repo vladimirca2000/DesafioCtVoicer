@@ -1,11 +1,12 @@
 ﻿using ChatBot.Domain.Entities;
+using ChatBot.Domain.ValueObjects; // Necessário para Email
 
 namespace ChatBot.Domain.Entities;
 
 public class User : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
+    public Email Email { get; set; } = null!; // Alterado de string para o Value Object Email
     public bool IsActive { get; set; } = true;
 
     // Navigation Properties

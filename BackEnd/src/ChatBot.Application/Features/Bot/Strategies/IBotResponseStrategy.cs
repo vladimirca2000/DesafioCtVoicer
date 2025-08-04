@@ -1,15 +1,20 @@
-﻿namespace ChatBot.Application.Features.Bot.Strategies;
+﻿using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
+using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
+
+namespace ChatBot.Application.Features.Bot.Strategies;
 
 /// <summary>
-/// Define o contrato para diferentes estratégias de resposta do bot.
+/// Contrato para as diferentes estratégias de resposta do bot.
 /// </summary>
 public interface IBotResponseStrategy
 {
     /// <summary>
-    /// Processa a mensagem do usuário e gera uma resposta do bot, se aplicável.
+    /// Verifica se esta estratégia pode lidar com o comando de mensagem do usuário.
     /// </summary>
-    /// <param name="userMessage">A mensagem enviada pelo usuário.</param>
-    /// <param name="cancellationToken">Token de cancelamento.</param>
-    /// <returns>A resposta gerada pelo bot, ou null/vazio se esta estratégia não se aplica.</returns>
-    Task<string?> GenerateResponseAsync(string userMessage, CancellationToken cancellationToken);
+    bool CanHandle(ProcessUserMessageCommand command);
+
+    /// <summary>
+    /// Gera o conteúdo da resposta do bot.
+    /// </summary>
+    MessageContent GenerateResponse(ProcessUserMessageCommand command);
 }

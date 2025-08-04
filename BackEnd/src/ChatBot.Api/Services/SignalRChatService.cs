@@ -1,12 +1,13 @@
-﻿using ChatBot.Application.Common.Interfaces;
-using ChatBot.Shared.DTOs.Chat;
-using Microsoft.AspNetCore.SignalR; // Adicionar este using
+﻿using Microsoft.AspNetCore.SignalR;
+using ChatBot.Application.Common.Interfaces;
 using ChatBot.Api.Hubs;
+using System.Threading.Tasks;
+using System;
 
 namespace ChatBot.Api.Services;
 
 /// <summary>
-/// Implementação do serviço de notificação em tempo real via SignalR.
+/// Implementação concreta do serviço de chat em tempo real usando SignalR.
 /// </summary>
 public class SignalRChatService : ISignalRChatService
 {
@@ -17,15 +18,23 @@ public class SignalRChatService : ISignalRChatService
         _hubContext = hubContext;
     }
 
-    public async Task SendMessageToChatSessionAsync(Guid chatSessionId, ChatMessageDto message, CancellationToken cancellationToken)
+    public async Task SendMessageToChatSession(Guid chatSessionId, string messageContent, bool isBot, Guid? userId, Guid messageId, DateTime sentAt)
     {
-        // Envia a mensagem para um grupo específico (a sessão de chat)
-        await _hubContext.Clients.Group(chatSessionId.ToString()).SendAsync("ReceiveMessage", message, cancellationToken);
+        // Envia um DTO estruturado para o cliente SignalR
+        // O cliente deve estar conectado ao grupo com o nome da chatSessionId
+        await _hubContext.Clients.Group(chatSessionId.ToString()).SendAsync("ReceiveMessage", new
+        {
+            MessageId = messageId,
+            ChatSessionId = chatSessionId,
+            Content = messageContent,
+            IsFromBot = isBot,
+            UserId = userId,
+            SentAt = sentAt
+        });
     }
 
-    public async Task NotifyChatSessionEndedAsync(Guid chatSessionId, string reason, CancellationToken cancellationToken)
+    public async Task NotifyChatSessionEnded(Guid chatSessionId, string reason)
     {
-        // Notifica um grupo específico sobre o encerramento da sessão
-        await _hubContext.Clients.Group(chatSessionId.ToString()).SendAsync("SessionEnded", chatSessionId, reason, cancellationToken);
+        await _hubContext.Clients.Group(chatSessionId.ToString()).SendAsync("ChatSessionEnded", new { chatSessionId, reason });
     }
 }

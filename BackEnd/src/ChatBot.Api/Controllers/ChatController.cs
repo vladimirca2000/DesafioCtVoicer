@@ -1,10 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System.Net; // Para HttpStatusCode
-using System.Linq;
+using System.Net;
 using ChatBot.Application.Features.Chat.Commands.StartChatSession;
 using ChatBot.Application.Features.Chat.Commands.SendMessage;
-using ChatBot.Application.Features; // Para o .Any()
+using ChatBot.Application.Features.Chat.Commands.EndChatSession; // Necessário para o novo comando
+using ChatBot.Application.Common.Models;
 
 namespace ChatBot.Api.Controllers;
 
@@ -28,17 +28,12 @@ public class ChatController : ControllerBase
     [HttpPost("start-session")]
     [ProducesResponseType(typeof(StartChatSessionResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> StartSession([FromBody] StartChatSessionCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
-
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        // Retorna BadRequest com a lista de erros ou o erro principal
-        return BadRequest(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+        return Ok(result.Value);
     }
 
     /// <summary>
@@ -50,16 +45,28 @@ public class ChatController : ControllerBase
     [HttpPost("send-message")]
     [ProducesResponseType(typeof(SendMessageResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> SendMessage([FromBody] SendMessageCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result.Value);
+    }
 
-        if (result.IsSuccess)
-        {
-            return Ok(result.Value);
-        }
-
-        // Retorna BadRequest com a lista de erros ou o erro principal
-        return BadRequest(new { errors = result.Errors.Any() ? result.Errors : new List<string> { result.Error! } });
+    /// <summary>
+    /// Encerra uma sessão de chat existente.
+    /// </summary>
+    /// <param name="command">Dados para encerrar a sessão de chat.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Confirmação do encerramento da sessão.</returns>
+    [HttpPost("end-session")]
+    [ProducesResponseType(typeof(EndChatSessionResponse), (int)HttpStatusCode.OK)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
+    public async Task<IActionResult> EndSession([FromBody] EndChatSessionCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result.Value);
     }
 }

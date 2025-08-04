@@ -6,7 +6,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5297"
+      "applicationUrl": "http://localhost:5000",
+      "launchBrowser": true, // Adicionado para abrir o navegador
+      "launchUrl": "swagger" // Adicionado para direcionar ao Swagger UI
     },
     "https": {
       "commandName": "Project",
@@ -14,14 +16,17 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7250;http://localhost:5297"
+      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "launchBrowser": true, // Adicionado para abrir o navegador
+      "launchUrl": "swagger" // Adicionado para direcionar ao Swagger UI
     },
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
+      "launchBrowser": true, // Já existe e está correto
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "launchUrl": "swagger" // Adicionado para direcionar ao Swagger UI no IIS Express
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json",

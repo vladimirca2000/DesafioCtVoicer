@@ -1,14 +1,19 @@
-﻿using MediatR;
-using ChatBot.Application.Common.Interfaces;
-using ChatBot.Domain.Events;
-using ChatBot.Shared.DTOs.Chat; // Para ChatMessageDto
-using Microsoft.Extensions.Logging; // Opcional, para logar
+// Conteúdo COMPLETO e CORRETO para:
+// C:\Desenvolvimento\DesafioCtVoicer\BackEnd\src\ChatBot.Application\Features\Chat\EventHandlers\MessageSentEventHandler.cs
 
+using MediatR;
+using ChatBot.Domain.Events;
+using ChatBot.Application.Common.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+// NAMESPACE CORRETO para esta localização:
 namespace ChatBot.Application.Features.Chat.EventHandlers;
 
 /// <summary>
 /// Manipulador para o evento de domínio MessageSentDomainEvent.
-/// Envia a mensagem para os clientes via SignalR.
+/// Notifica os clientes via SignalR quando uma nova mensagem é enviada.
 /// </summary>
 public class MessageSentEventHandler : INotificationHandler<MessageSentDomainEvent>
 {
@@ -23,20 +28,17 @@ public class MessageSentEventHandler : INotificationHandler<MessageSentDomainEve
 
     public async Task Handle(MessageSentDomainEvent notification, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Domain Event: MessageSentDomainEvent recebido para MessageId: {MessageId}", notification.MessageId);
+        _logger.LogInformation("Evento MessageSentDomainEvent recebido para sessão {ChatSessionId}. Mensagem ID: {MessageId}", notification.ChatSessionId, notification.MessageId);
 
-        var chatMessageDto = new ChatMessageDto
-        {
-            Id = notification.MessageId,
-            ChatSessionId = notification.ChatSessionId,
-            UserId = notification.UserId,
-            Content = notification.Content,
-            SentAt = notification.SentAt,
-            IsFromBot = notification.IsFromBot
-        };
+        await _signalRChatService.SendMessageToChatSession(
+            notification.ChatSessionId,
+            notification.Content,
+            notification.IsFromBot,
+            notification.UserId,
+            notification.MessageId,
+            notification.SentAt
+        );
 
-        await _signalRChatService.SendMessageToChatSessionAsync(notification.ChatSessionId, chatMessageDto, cancellationToken);
-
-        _logger.LogInformation("Mensagem enviada via SignalR para a sessão {ChatSessionId}", notification.ChatSessionId);
+        _logger.LogInformation("Notificação de nova mensagem enviada via SignalR para sessão {ChatSessionId}.", notification.ChatSessionId);
     }
 }
