@@ -32,6 +32,210 @@ ChatBot.Solution/
 │   └── ChatBot.UnitTests/
 └── docs/                              # Documentação adicional
 ```
+```
+ChatBot.Solution/
+├── .git/
+├── .github/ (Configurações de CI/CD, ações, etc.)
+├── .vs/ (Pasta oculta do Visual Studio para arquivos de configuração da IDE)
+├── .gitignore
+├── ChatBot.sln
+├── src/                                     # Código Fonte da Aplicação
+│   ├── ChatBot.Api/                         # Projeto: Camada de Apresentação (Web API)
+│   │   ├── Controllers/
+│   │   │   ├── BotController.cs
+│   │   │   ├── ChatController.cs
+│   │   │   └── UsersController.cs
+│   │   ├── Hubs/
+│   │   │   └── ChatHub.cs                   # Hub para SignalR
+│   │   ├── Middleware/
+│   │   │   └── ExceptionHandlingMiddleware.cs
+│   │   ├── Filters/
+│   │   │   └── RequestValidationFilter.cs
+│   │   ├── Extensions/
+│   │   │   ├── ServiceCollectionExtensions.cs
+│   │   │   └── WebApplicationExtensions.cs
+│   │   ├── Properties/
+│   │   ├── appsettings.Development.json
+│   │   ├── appsettings.json                 # Configurações da aplicação (conexão DB, Serilog)
+│   │   ├── Program.cs                       # Ponto de entrada da aplicação, incluindo migrações automáticas
+│   │   ├── ChatBot.Api.csproj
+│   │   └── launchSettings.json              # Configurações de inicialização (com Swagger direto)
+│   ├── ChatBot.Application/                 # Projeto: Camada de Aplicação (Lógica de Negócio, CQRS, Slices Verticais)
+│   │   ├── Common/
+│   │   │   ├── Behaviors/
+│   │   │   │   ├── LoggingBehavior.cs
+│   │   │   │   ├── PerformanceBehavior.cs
+│   │   │   │   ├── TransactionBehavior.cs
+│   │   │   │   └── ValidationBehavior.cs
+│   │   │   ├── Exceptions/
+│   │   │   │   ├── BusinessRuleException.cs
+│   │   │   │   ├── NotFoundException.cs
+│   │   │   │   └── ValidationException.cs
+│   │   │   ├── Interfaces/
+│   │   │   │   ├── ICommand.cs
+│   │   │   │   ├── IQuery.cs
+│   │   │   │   ├── ISignalRChatService.cs   # Contrato para serviço SignalR
+│   │   │   │   └── IUnitOfWork.cs
+│   │   │   └── Models/
+│   │   │       └── Result.cs
+│   │   ├── Features/                        # Vertical Slices: Organização por Funcionalidade
+│   │   │   ├── Chat/                        # Slice: Gerenciamento de Sessões e Interação Humana no Chat
+│   │   │   │   ├── Commands/
+│   │   │   │   │   ├── StartChatSession/
+│   │   │   │   │   │   ├── StartChatSessionCommand.cs
+│   │   │   │   │   │   └── StartChatSessionCommandHandler.cs
+│   │   │   │   │   ├── SendMessage/
+│   │   │   │   │   │   ├── SendMessageCommand.cs
+│   │   │   │   │   │   └── SendMessageCommandHandler.cs
+│   │   │   │   │   └── EndChatSession/
+│   │   │   │   │       ├── EndChatSessionCommand.cs
+│   │   │   │   │       └── EndChatSessionCommandHandler.cs
+│   │   │   │   ├── Queries/
+│   │   │   │   │   ├── GetChatHistory/
+│   │   │   │   │   │   └── GetChatHistoryQuery.cs
+│   │   │   │   │   └── GetActiveSessions/
+│   │   │   │   │       └── GetActiveSessionsQuery.cs
+│   │   │   │   ├── Events/                  # Eventos de Aplicação/Domínio (não de infra)
+│   │   │   │   │   ├── MessageSentEvent.cs  # (Este foi movido para Domain/Events, mas a pasta aqui pode ser para eventos de aplicação)
+│   │   │   │   │   └── ChatSessionEndedEvent.cs # (Este foi movido para Domain/Events)
+│   │   │   │   └── EventHandlers/           # Handlers que reagem a eventos (do Domain)
+│   │   │   │       ├── ChatSessionEndedEventHandler.cs # Reage a ChatSessionEndedDomainEvent
+│   │   │   │       └── MessageSentEventHandler.cs # Reage a MessageSentDomainEvent (CORRIGIDO PARA FICAR AQUI!)
+│   │   │   ├── Bot/                         # Slice: Lógica de Respostas e Inteligência do Bot
+│   │   │   │   ├── Commands/
+│   │   │   │   │   └── ProcessUserMessage/
+│   │   │   │   │       ├── ProcessUserMessageCommand.cs
+│   │   │   │   │       └── ProcessUserMessageCommandHandler.cs
+│   │   │   │   ├── Queries/
+│   │   │   │   │   └── GetBotConfiguration/
+│   │   │   │   │       └── GetBotConfigurationQuery.cs
+│   │   │   │   ├── Strategies/              # Padrão Strategy para diferentes lógicas de resposta
+│   │   │   │   │   ├── IBotResponseStrategy.cs
+│   │   │   │   │   ├── RandomResponseStrategy.cs
+│   │   │   │   │   ├── KeywordBasedResponseStrategy.cs
+│   │   │   │   │   └── ExitCommandStrategy.cs
+│   │   │   │   └── Factories/               # Padrão Factory Method para criação de estratégias
+│   │   │   │       ├── IBotResponseStrategyFactory.cs
+│   │   │   │       └── BotResponseStrategyFactory.cs
+│   │   │   └── Users/                       # Slice: Gerenciamento de Usuários
+│   │   │       ├── Commands/
+│   │   │       │   ├── CreateUser/
+│   │   │       │   └── UpdateUserStatus/
+│   │   │       └── Queries/
+│   │   │           ├── GetUserById/
+│   │   │           └── GetUserSessions/
+│   │   └── DependencyInjection.cs           # Registro dos serviços da camada Application
+│   │   └── ChatBot.Application.csproj
+│   ├── ChatBot.Domain/                      # Projeto: Camada de Domínio (Regras de Negócio e Entidades)
+│   │   ├── Entities/
+│   │   │   ├── BaseEntity.cs
+│   │   │   ├── BotResponse.cs
+│   │   │   ├── ChatSession.cs
+│   │   │   ├── Message.cs
+│   │   │   └── User.cs
+│   │   ├── ValueObjects/
+│   │   │   ├── Email.cs
+│   │   │   └── MessageContent.cs
+│   │   ├── Enums/
+│   │   │   ├── BotResponseType.cs
+│   │   │   ├── MessageType.cs
+│   │   │   └── SessionStatus.cs
+│   │   ├── Interfaces/
+│   │   │   ├── IAuditable.cs
+│   │   │   ├── IDomainEvent.cs              # Interface base para Eventos de Domínio
+│   │   │   └── ISoftDeletable.cs
+│   │   ├── Repositories/                    # Interfaces de Repositórios
+│   │   │   ├── IBaseRepository.cs
+│   │   │   ├── IBotResponseRepository.cs
+│   │   │   ├── IChatSessionRepository.cs
+│   │   │   ├── IMessageRepository.cs
+│   │   │   └── IUserRepository.cs
+│   │   ├── Services/                        # Interfaces para Domain Services
+│   │   │   ├── IBotDomainService.cs
+│   │   │   └── IChatDomainService.cs
+│   │   ├── Events/                          # Classes concretas para Eventos de Domínio
+│   │   │   ├── ChatSessionEndedDomainEvent.cs
+│   │   │   └── MessageSentDomainEvent.cs
+│   │   └── ChatBot.Domain.csproj
+│   ├── ChatBot.Infrastructure/              # Projeto: Camada de Infraestrutura (Implementações)
+│   │   ├── Data/
+│   │   │   ├── Configurations/
+│   │   │   │   ├── BotResponseConfiguration.cs
+│   │   │   │   ├── ChatSessionConfiguration.cs
+│   │   │   │   ├── MessageConfiguration.cs
+│   │   │   │   └── UserConfiguration.cs
+│   │   │   ├── Interceptors/
+│   │   │   │   ├── AuditableEntityInterceptor.cs
+│   │   │   │   └── SoftDeleteInterceptor.cs
+│   │   │   ├── Migrations/                  # Arquivos de migração gerados pelo EF Core
+│   │   │   │   └── 20250730203045_InitialCreate.cs
+│   │   │   ├── ChatBotDbContext.cs
+│   │   │   └── UnitOfWork.cs
+│   │   ├── Repositories/                    # Implementações Concretas dos Repositórios
+│   │   │   ├── BaseRepository.cs
+│   │   │   ├── BotResponseRepository.cs
+│   │   │   ├── ChatSessionRepository.cs
+│   │   │   ├── MessageRepository.cs
+│   │   │   └── UserRepository.cs
+│   │   ├── Services/                        # Implementações Concretas de Serviços
+│   │   │   ├── SignalRChatService.cs        # Implementa ISignalRChatService
+│   │   │   ├── EmailService.cs
+│   │   │   └── CacheService.cs
+│   │   ├── Factories/                       # Implementações Concretas de Factories
+│   │   │   └── BotResponseStrategyFactory.cs
+│   │   ├── External/                        # Adapters/Clients para serviços externos
+│   │   │   ├── SomeExternalApiClient.cs
+│   │   │   └── ThirdPartyLLMClient.cs
+│   │   └── DependencyInjection.cs           # Registro dos serviços da camada Infrastructure
+│   │   └── ChatBot.Infrastructure.csproj
+│   └── ChatBot.Shared/                      # Projeto: Contratos Compartilhados (DTOs, Enums, Constantes)
+│       ├── DTOs/
+│       │   ├── Chat/
+│       │   │   ├── ChatMessageDto.cs
+│       │   │   └── ChatSessionSummaryDto.cs
+│       │   ├── Bot/
+│       │   │   └── BotConfigurationDto.cs
+│       │   ├── Users/
+│       │   │   └── UserProfileDto.cs
+│       │   └── General/
+│       │       └── ApiResponse.cs
+│       ├── Constants/
+│       │   ├── AppConstants.cs
+│       │   └── ValidationMessages.cs
+│       ├── Enums/
+│       │   └── SortOrderEnum.cs
+│       ├── Extensions/
+│       │   ├── StringExtensions.cs
+│       │   └── DateTimeExtensions.cs
+│       └── ChatBot.Shared.csproj
+├── tests/                                   # Projetos de Teste para garantir a Qualidade
+│   ├── ChatBot.ArchitectureTests/           # Testes Arquiteturais (ex: dependências de camadas)
+│   │   ├── Rules/
+│   │   │   ├── LayerDependencyTests.cs
+│   │   │   └── DomainLayerRulesTests.cs
+│   │   └── ChatBot.ArchitectureTests.csproj
+│   ├── ChatBot.IntegrationTests/            # Testes de Integração (fluxos completos, API + DB)
+│   │   ├── Api/
+│   │   │   ├── Chat/
+│   │   │   └── Users/
+│   │   ├── Fixtures/
+│   │   │   └── CustomWebApplicationFactory.cs
+│   │   ├── TestData/
+│   │   └── ChatBot.IntegrationTests.csproj
+│   └── ChatBot.UnitTests/                   # Testes Unitários (componentes individuais isoladamente)
+│       ├── Application/
+│       │   ├── Features/
+│       │   │   ├── Chat/
+│       │   │   └── Bot/
+│       │   └── Common/
+│       ├── Domain/
+│       │   ├── Entities/
+│       │   └── ValueObjects/
+│       ├── Mocks/
+│       ├── Builders/
+│       └── ChatBot.UnitTests.csproj
+└── README.md                                # Documentação do Projeto
+```
 
 ### Diagrama Arquitetural
 
