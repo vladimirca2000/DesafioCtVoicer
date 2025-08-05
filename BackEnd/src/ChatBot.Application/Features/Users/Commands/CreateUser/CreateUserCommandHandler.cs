@@ -33,7 +33,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         var existingUser = await _userRepository.GetUserByEmailAsync(userEmail, cancellationToken);
         if (existingUser != null)
         {
-            throw new BusinessRuleException($"Já existe um usuário com o e-mail '{request.Email}'.");
+            return Result<CreateUserResponse>.Failure($"Já existe um usuário com o e-mail '{request.Email}'.");
         }
 
         // 3. Criar a nova entidade de usuário

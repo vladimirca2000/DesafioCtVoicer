@@ -11,6 +11,10 @@ public class ChatSessionRepository : BaseRepository<ChatSession>, IChatSessionRe
 
     public async Task<IEnumerable<ChatSession>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.Where(s => s.UserId == userId).ToListAsync(cancellationToken);
+        return await _dbSet
+            .Include(s => s.Messages) // Incluir mensagens para poder contar
+            .Where(s => s.UserId == userId && !s.IsDeleted) // Apenas sessões não deletadas
+            .OrderByDescending(s => s.StartedAt) // Mais recentes primeiro
+            .ToListAsync(cancellationToken);
     }
 }

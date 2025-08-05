@@ -42,10 +42,19 @@ public class UsersController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            // O ideal seria mapear o tipo de falha para o status HTTP correto,
-            // mas o Result genérico só indica sucesso/falha. O middleware ainda lidará com exceções
-            // como BusinessRuleException lançadas pelo handler.
-            // Aqui, apenas para exemplo de um BadRequest genérico de validação se o handler não lançasse.
+            // Verifica se o erro é de usuário duplicado para retornar 409 Conflict
+            if (result.Errors.Any(e => e.Contains("Já existe um usuário com o e-mail")))
+            {
+                return Conflict(new ErrorResponse
+                {
+                    Title = "Usuário Já Existe",
+                    Status = (int)HttpStatusCode.Conflict,
+                    Detail = result.Errors.FirstOrDefault(),
+                    Messages = result.Errors
+                });
+            }
+            
+            // Para outros tipos de erro, retorna BadRequest
             return BadRequest(new ErrorResponse
             {
                 Title = "Falha ao criar usuário",

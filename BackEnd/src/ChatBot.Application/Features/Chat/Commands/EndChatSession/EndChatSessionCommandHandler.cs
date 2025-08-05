@@ -28,12 +28,12 @@ public class EndChatSessionCommandHandler : IRequestHandler<EndChatSessionComman
         var chatSession = await _chatSessionRepository.GetByIdAsync(request.ChatSessionId, cancellationToken);
         if (chatSession == null)
         {
-            throw new NotFoundException("Sessão de chat", request.ChatSessionId);
+            return Result<EndChatSessionResponse>.Failure($"Sessão de chat com ID '{request.ChatSessionId}' não foi encontrada.");
         }
 
         if (chatSession.Status == SessionStatus.Ended)
         {
-            throw new BusinessRuleException("Esta sessão de chat já está encerrada.");
+            return Result<EndChatSessionResponse>.Failure($"Esta sessão de chat já está encerrada desde {chatSession.EndedAt:dd/MM/yyyy HH:mm}.");
         }
 
         chatSession.Status = SessionStatus.Ended;

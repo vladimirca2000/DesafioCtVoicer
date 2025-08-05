@@ -37,7 +37,7 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
             user = await _userRepository.GetByIdAsync(request.UserId.Value, cancellationToken);
             if (user == null)
             {
-                throw new NotFoundException("Usuário", request.UserId.Value);
+                return Result<StartChatSessionResponse>.Failure($"Usuário com ID '{request.UserId.Value}' não foi encontrado.");
             }
         }
         else // Criar um novo usuário se UserId não foi fornecido e UserName sim
@@ -63,7 +63,15 @@ public class StartChatSessionCommandHandler : IRequestHandler<StartChatSessionCo
         await _chatSessionRepository.AddAsync(chatSession, cancellationToken);
 
         // Criar o Value Object MessageContent para a mensagem inicial
-        var initialMessageContent = MessageContent.Create(request.InitialMessageContent!);
+        MessageContent initialMessageContent;
+        try
+        {
+            initialMessageContent = MessageContent.Create(request.InitialMessageContent!);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<StartChatSessionResponse>.Failure($"Conteúdo da mensagem inicial inválido: {ex.Message}");
+        }
 
         // Adicionar a mensagem inicial
         var initialMessage = new Message
