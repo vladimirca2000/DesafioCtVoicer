@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿// C:\Desenvolvimento\DocChatBoot\BackEnd\src\ChatBot.Api\Middleware\ExceptionHandlingMiddleware.cs
+
+using System.Net;
 using System.Text.Json;
 using ChatBot.Application.Common.Exceptions;
 using ChatBot.Shared.DTOs.General;
@@ -65,7 +67,7 @@ public class ExceptionHandlingMiddleware
                 errorResponse.Messages = validationException.Errors.SelectMany(e => e.Value).ToList(); // Lista plana de todas as mensagens de erro
                 break;
 
-            case NotFoundException notFoundException:
+            case NotFoundException notFoundException: // <--- Seu código já trata essa exceção e informa 404!
                 // Recurso não encontrado
                 statusCode = HttpStatusCode.NotFound; // 404 Not Found
                 errorResponse.Title = "Recurso Não Encontrado";

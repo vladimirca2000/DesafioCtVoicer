@@ -1,20 +1,21 @@
-﻿using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
+﻿using ChatBot.Domain.ValueObjects;
 using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
+using System.Threading.Tasks; // Adicionar este using
 
 namespace ChatBot.Application.Features.Bot.Strategies;
 
 /// <summary>
-/// Contrato para as diferentes estratégias de resposta do bot.
+/// Contrato para as diferentes estratgias de resposta do bot.
 /// </summary>
-public interface IBotResponseStrategy
+public interface IBotResponseStrategy // Esta é a interface
 {
     /// <summary>
-    /// Verifica se esta estratégia pode lidar com o comando de mensagem do usuário.
+    /// Verifica se esta estratgia pode lidar com o comando de mensagem do usurio.
     /// </summary>
     bool CanHandle(ProcessUserMessageCommand command);
 
     /// <summary>
-    /// Gera o conteúdo da resposta do bot.
+    /// Gera o contedo da resposta do bot de forma assncrona.
     /// </summary>
-    MessageContent GenerateResponse(ProcessUserMessageCommand command);
+    Task<MessageContent> GenerateResponse(ProcessUserMessageCommand command);
 }

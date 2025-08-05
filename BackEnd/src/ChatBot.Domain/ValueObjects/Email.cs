@@ -1,10 +1,13 @@
-﻿using System.Net.Mail; // Para validação de formato de e-mail
+﻿// C:\Desenvolvimento\DocChatBoot\BackEnd\src\ChatBot.Domain\ValueObjects\Email.cs
+
+using System.Net.Mail; // Para validação de formato de e-mail
+using System; // Necessário para ArgumentException
 
 namespace ChatBot.Domain.ValueObjects;
 
 /// <summary>
 /// Value Object que representa um endereço de e-mail.
-/// Garante que o e-mail seja válido no momento da criação.
+/// Garante que o e-mail seja válido no momento da criação e que seja normalizado.
 /// </summary>
 public record Email
 {
@@ -20,24 +23,22 @@ public record Email
     }
 
     /// <summary>
-    /// Cria uma nova instância de Email após validar o formato.
+    /// Cria uma nova instância de Email após validar o formato e normalizar para minúsculas.
     /// </summary>
     /// <param name="email">O endereço de e-mail a ser validado e encapsulado.</param>
     /// <returns>Uma nova instância de Email.</returns>
-    /// <exception cref="ArgumentException">Lançada se o formato do e-mail for inválido.</exception>
+    /// <exception cref="ArgumentException">Lançada se o formato do e-mail for inválido ou vazio.</exception>
     public static Email Create(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
             throw new ArgumentException("O endereço de e-mail não pode ser vazio ou nulo.", nameof(email));
         }
-
         try
         {
-            // Tenta criar uma instância de MailAddress para validar o formato
             var mailAddress = new MailAddress(email);
-            // Opcional: Você pode adicionar mais regras aqui, como blacklist de domínios, etc.
-            return new Email(email);
+            // Correção aplicada: Normaliza o e-mail para minúsculas antes de armazenar.
+            return new Email(email.ToLowerInvariant());
         }
         catch (FormatException)
         {

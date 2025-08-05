@@ -1,0 +1,22 @@
+/* Custom F1 Colors */
+.bg-f1-red {
+  background-color: #E10600;
+}
+
+.text-f1-red {
+  color: #E10600;
+}
+
+.hover\:bg-f1-red:hover {
+  background-color: #E10600;
+}
+
+.border-f1-red {
+  border-color: #E10600;
+}
+
+/* Focus styles */
+:focus {
+  outline: 2px solid #E10600;
+  outline-offset: 2px;
+}

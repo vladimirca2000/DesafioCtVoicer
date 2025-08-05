@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿// Conteúdo COMPLETO para ChatBot.Application/Features/Bot/Commands/ProcessUserMessage/ProcessUserMessageCommandHandler.cs
+
+using MediatR;
 using ChatBot.Application.Common.Models;
 using ChatBot.Application.Common.Interfaces;
 using ChatBot.Application.Features.Bot.Factories;
@@ -12,7 +14,7 @@ namespace ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
 
 /// <summary>
 /// Manipulador para o comando ProcessUserMessageCommand.
-/// Orquestra a lógica de resposta do bot.
+/// Orquestra a lgica de resposta do bot.
 /// </summary>
 public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessageCommand, Result<ProcessUserMessageResponse>>
 {
@@ -35,35 +37,36 @@ public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessa
 
     public async Task<Result<ProcessUserMessageResponse>> Handle(ProcessUserMessageCommand request, CancellationToken cancellationToken)
     {
-        // 1. Validar se a sessão de chat existe
+        // 1. Validar se a sesso de chat existe
         var chatSession = await _chatSessionRepository.GetByIdAsync(request.ChatSessionId, cancellationToken);
         if (chatSession == null)
         {
-            throw new NotFoundException("Sessão de chat não encontrada.");
+            throw new NotFoundException("Sesso de chat no encontrada.");
         }
 
-        // 2. Selecionar a estratégia de resposta do bot
+        // 2. Selecionar a estratgia de resposta do bot
         var strategy = _botResponseStrategyFactory.GetStrategy(request);
 
-        // 3. Gerar o conteúdo da resposta do bot usando a estratégia selecionada
-        var botResponseContent = strategy.GenerateResponse(request); // A estratégia retorna MessageContent
+        // 3. Gerar o contedo da resposta do bot usando a estratgia selecionada
+        // ALTERADO: Adicionado await na chamada de GenerateResponse
+        var botResponseContent = await strategy.GenerateResponse(request);
 
         // 4. Criar a entidade Message para a resposta do bot
         var botMessage = new Message
         {
             ChatSessionId = request.ChatSessionId,
             UserId = null, // Mensagem do bot, sem UserId associado diretamente
-            Content = botResponseContent, // Conteúdo já é MessageContent, não precisa de conversão explícita
+            Content = botResponseContent, // Contedo j  MessageContent, no precisa de converso explcita
             Type = MessageType.BotResponse,
             IsFromBot = true,
             SentAt = DateTime.UtcNow,
             CreatedBy = "BotSystem" // Usar um nome de auditoria para o bot
         };
 
-        // 5. Adicionar a mensagem do bot ao repositório
+        // 5. Adicionar a mensagem do bot ao repositrio
         await _messageRepository.AddAsync(botMessage, cancellationToken);
 
-        // 6. Salvar as mudanças
+        // 6. Salvar as mudanas
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 7. Retornar a resposta
