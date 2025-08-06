@@ -805,4 +805,5 @@ dotnet run
 ---
 
 * Esta é a documentaçãodo back-end, a do Front-end está da pasta front
-* Useos inserts que estão no arquivo INSERT_INTO_public.BotResponses.txt para povoar a tabela de respostas.
+  
+# Use os inserts que estão no arquivo INSERT_INTO_public.BotResponses.txt para povoar a tabela de respostas.
