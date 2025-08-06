@@ -804,4 +804,4 @@ dotnet run
 
 ---
 
-*Esta é a primeira parte da documentação, focada no Backend. As próximas seções abordarão Frontend, Testes e Deploy.*
+*Esta é a documentaçãodo back-end, a do Front-end está da pasta front
