@@ -1,6 +1,4 @@
-INSERT INTO public."BotResponses" 
-("Id", "Content", "Type", "Keywords", "IsActive", "Priority", "IsDeleted", "DeletedAt", "DeletedBy", "CreatedAt", "UpdatedAt", "CreatedBy", "UpdatedBy")
-VALUES 
+INSERT INTO public."BotResponses" ("Id", "Content", "Type", "Keywords", "IsActive", "Priority", "IsDeleted", "DeletedAt", "DeletedBy", "CreatedAt", "UpdatedAt", "CreatedBy", "UpdatedBy") values 
 ('f1a00001-0000-0000-0000-000000000001', 'Olá, fã de F1! Como posso ajudar hoje?', 1, 'ola,oi,olá,hello,hi,start', true, 1, false, null, null, now(), null, 'System', null),
 ('f1a00002-0000-0000-0000-000000000002', 'Bem-vindo ao assistente de Fórmula 1! O que deseja saber?', 2, 'bem-vindo,começar,iniciar', true, 1, false, null, null, now(), null, 'System', null),
 ('f1a00003-0000-0000-0000-000000000003', 'Saudações, petrolhead! Pergunte sobre F1.', 1, 'saudações,saudacoes,ola f1', true, 2, false, null, null, now(), null, 'System', null),
@@ -600,5 +598,4 @@ VALUES
 ('f1a00497-0000-0000-0010-000000000497', 'Lewis Hamilton foi detido pela polícia australiana em 2010 por fazer "donuts" com carro de aluguel.', 2, 'hamilton,detido,austrália,donuts', true, 0, false, null, null, now(), null, 'System', null),
 ('f1a00498-0000-0000-0010-000000000498', 'Daniel Ricciardo tem tatuagem de leão no peito simbolizando sua cidade natal, Perth na Austrália.', 2, 'ricciardo,tatuagem,leão,austrália', true, 0, false, null, null, now(), null, 'System', null),
 ('f1a00499-0000-0000-0010-000000000499', 'Ayrton Senna recusou ser homenageado pelo governo brasileiro em 1991: "Prefiro que invistam nas crianças".', 2, 'senna,recusa,homenagem,crianças', true, 0, false, null, null, now(), null, 'System', null),
-('f1a00500-0000-0000-0010-000000000500', 'Max Verstappen pode se tornar o piloto mais jovem a disputar 200 GPs em 2025, aos 27 anos.', 2, 'verstappen,jovem,200 gps,previsão', true, 0, false, null, null, now(), null, 'System', null),
-
+('f1a00500-0000-0000-0010-000000000500', 'Max Verstappen pode se tornar o piloto mais jovem a disputar 200 GPs em 2025, aos 27 anos.', 2, 'verstappen,jovem,200 gps,previsão', true, 0, false, null, null, now(), null, 'System', null)

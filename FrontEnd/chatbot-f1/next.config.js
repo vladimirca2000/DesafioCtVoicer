@@ -62,7 +62,6 @@ const nextConfig = {
   },
 
   experimental: {
-    optimizeCss: true,
     optimizeServerReact: true,
   },
 

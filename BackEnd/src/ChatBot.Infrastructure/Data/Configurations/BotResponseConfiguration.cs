@@ -39,6 +39,43 @@ public class BotResponseConfiguration : IEntityTypeConfiguration<BotResponse>
         builder.HasIndex(x => x.IsActive);
         builder.HasIndex(x => x.Priority);
         builder.HasIndex(x => x.IsDeleted);
-        
+
+        // Seed data
+        builder.HasData(
+            // Saudações aleatórias
+            new BotResponse
+            {
+                Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                Content = "Olá! Como posso ajudar você hoje?",
+                Type = BotResponseType.Random,
+                IsActive = true,
+                Priority = 1,
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "System",
+                IsDeleted = false
+            },
+            new BotResponse
+            {
+                Id = new Guid("11111111-1111-1111-1111-111111111112"),
+                Content = "Oi! Em que posso ser útil?",
+                Type = BotResponseType.Random,
+                IsActive = true,
+                Priority = 2,
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "System",
+                IsDeleted = false
+            },
+            new BotResponse
+            {
+                Id = new Guid("11111111-1111-1111-1111-111111111113"),
+                Content = "Estou aqui para ajudar! O que você gostaria de saber?",
+                Type = BotResponseType.Random,
+                IsActive = true,
+                Priority = 3,
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                CreatedBy = "System",
+                IsDeleted = false
+            }
+        );
     }
 }

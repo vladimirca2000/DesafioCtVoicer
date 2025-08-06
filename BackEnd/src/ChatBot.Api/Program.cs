@@ -30,6 +30,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
 
 app.UseMiddleware<ChatBot.Api.Middleware.ExceptionHandlingMiddleware>();
+
+// Database initialization with improved error handling
 {
     using (var scope = app.Services.CreateScope()) 
     {
@@ -37,13 +39,48 @@ app.UseMiddleware<ChatBot.Api.Middleware.ExceptionHandlingMiddleware>();
         try
         {
             var dbContext = services.GetRequiredService<ChatBotDbContext>();
-            app.Logger.LogInformation("Attempting to apply database migrations...");
-            dbContext.Database.Migrate(); 
-            app.Logger.LogInformation("Database migrations applied successfully.");
+            app.Logger.LogInformation("Attempting to connect to database and apply migrations...");
+            
+            // Ensure database is created
+            var canConnect = await dbContext.Database.CanConnectAsync();
+            if (!canConnect)
+            {
+                app.Logger.LogInformation("Database does not exist. Creating database...");
+                await dbContext.Database.EnsureCreatedAsync();
+                app.Logger.LogInformation("Database created successfully.");
+            }
+            else
+            {
+                app.Logger.LogInformation("Database connection established successfully.");
+            }
+            
+            // Apply migrations
+            var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+            {
+                app.Logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count());
+                await dbContext.Database.MigrateAsync();
+                app.Logger.LogInformation("Database migrations applied successfully.");
+            }
+            else
+            {
+                app.Logger.LogInformation("Database is up to date. No migrations to apply.");
+            }
         }
         catch (Exception ex)
         {
-            app.Logger.LogError(ex, "An error occurred while migrating the database.");
+            app.Logger.LogError(ex, "An error occurred while initializing the database. Connection String: {ConnectionString}", 
+                builder.Configuration.GetConnectionString("DefaultConnection"));
+            
+            // In development, we might want to continue even with database issues
+            if (builder.Environment.IsDevelopment())
+            {
+                app.Logger.LogWarning("Continuing startup in development mode despite database issues.");
+            }
+            else
+            {
+                throw; // Re-throw in production
+            }
         }
     }
 }
