@@ -11,9 +11,11 @@ namespace ChatBot.Application.Features.Bot.Strategies;
 /// </summary>
 public class ExitCommandStrategy : IBotResponseStrategy // Esta é a CLASSE que implementa a interface
 {
-    public bool CanHandle(ProcessUserMessageCommand command)
+    public async Task<bool> CanHandle(ProcessUserMessageCommand command)
     {
-        return command.UserMessage.ToLowerInvariant().Trim() == "sair";
+        // Exemplo: comando de saída detectado
+        var message = command.UserMessage.ToLowerInvariant();
+        return await Task.FromResult(message.Contains("sair") || message.Contains("encerrar"));
     }
 
     public Task<MessageContent> GenerateResponse(ProcessUserMessageCommand command)

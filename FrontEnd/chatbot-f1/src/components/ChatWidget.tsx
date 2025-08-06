@@ -587,6 +587,61 @@ export default function ChatWidget() {
     setMessageInput(''); // Limpa o input
 
     try {
+      // Se a mensagem for 'sair', chama o endpoint de encerramento ANTES de enviar
+      if (userMessage.content.toLowerCase().trim() === 'sair') {
+        console.log('🚪 Usuário digitou "sair" - encerrando sessão...');
+        
+        try {
+          const endSessionResponse = await apiClient.post(`/Chat/end-session`, {
+            chatSessionId: sessionId,
+            endReason: "Usuário digitou 'sair'",
+          });
+          
+          console.log('✅ Resposta do end-session:', endSessionResponse.status);
+          
+          if (endSessionResponse.status === 200) {
+            console.log('✅ Sessão encerrada com sucesso - fechando modal');
+            
+            // Adicionar mensagem de despedida
+            dispatch(addMessage({
+              id: `system-farewell-${Date.now()}`,
+              chatSessionId: sessionId,
+              userId: null,
+              content: 'Sessão encerrada. Até logo! 👋',
+              isFromBot: true,
+              sentAt: new Date().toISOString(),
+            }));
+            
+            // Aguardar um pouco para mostrar a mensagem de despedida
+            setTimeout(() => {
+              console.log('🚪 Fechando chat e limpando estado...');
+              dispatch(clearChat());
+              setIsChatOpen(false);
+            }, 1500);
+            
+            return; // Não continua com o fluxo normal de envio
+          }
+        } catch (endSessionError: any) {
+          console.error('❌ Erro ao encerrar sessão:', endSessionError);
+          // Se der erro ao encerrar, mostra erro mas continua
+          let errorMessage = 'Erro ao encerrar sessão.';
+          
+          if (endSessionError.response && endSessionError.response.data) {
+            if (endSessionError.response.data.message) {
+              errorMessage = endSessionError.response.data.message;
+            } else if (endSessionError.response.data.title) {
+              errorMessage = endSessionError.response.data.title;
+            }
+          }
+          
+          dispatch(setChatError(errorMessage));
+          return; // Não continua se deu erro
+        }
+      }
+
+      // Fluxo normal para mensagens que não são "sair"
+      console.log('📤 Enviando mensagem normal para o chat...');
+      
       // Envia mensagem do usuário para o backend
       await apiClient.post(`/Chat/send-message`, {
         chatSessionId: sessionId,
@@ -595,35 +650,22 @@ export default function ChatWidget() {
         messageType: 1, // MessageType.Text
       });
 
-      // Se a mensagem for 'sair', chama o endpoint de encerramento
-      if (userMessage.content.toLowerCase().trim() === 'sair') {
-        await apiClient.post(`/Chat/end-session`, {
-          chatSessionId: sessionId,
-          endReason: "Usuário digitou 'sair'",
-        });
-        // O SignalR cuidará da notificação de encerramento e limpeza do estado no frontend
-      } else {
-        // Solicita resposta do bot
-        // O backend deve chamar o endpoint do bot após salvar a mensagem do usuário
-        // ou o bot deve processar a mensagem do usuário de forma assíncrona após a gravação
-        // e enviar a resposta via SignalR.
-        // Por agora, vamos simular uma chamada direta ao bot para agilizar a resposta,
-        // mas o ideal é que o `MessageSentEventHandler` dispare a lógica do bot no backend.
-        const botResponse = await apiClient.post(`/Bot/process-message`, {
-          chatSessionId: sessionId,
-          userId: userId, // Bot precisa do userId para contexto
-          userMessage: userMessage.content,
-        });
-        const botMessageData = botResponse.data; // Backend retorna objeto diretamente
-        dispatch(addMessage({
-          id: botMessageData.messageId,
-          chatSessionId: botMessageData.chatSessionId,
-          userId: null,
-          content: botMessageData.botMessageContent,
-          isFromBot: true,
-          sentAt: botMessageData.sentAt,
-        }));
-      }
+      // Solicita resposta do bot
+      const botResponse = await apiClient.post(`/Bot/process-message`, {
+        chatSessionId: sessionId,
+        userId: userId, // Bot precisa do userId para contexto
+        userMessage: userMessage.content,
+      });
+      
+      const botMessageData = botResponse.data; // Backend retorna objeto diretamente
+      dispatch(addMessage({
+        id: botMessageData.messageId,
+        chatSessionId: botMessageData.chatSessionId,
+        userId: null,
+        content: botMessageData.botMessageContent,
+        isFromBot: true,
+        sentAt: botMessageData.sentAt,
+      }));
 
     } catch (apiError: any) {
       console.error('Erro ao enviar mensagem:', apiError);

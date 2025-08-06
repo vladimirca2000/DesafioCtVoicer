@@ -37,18 +37,17 @@ public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessa
 
     public async Task<Result<ProcessUserMessageResponse>> Handle(ProcessUserMessageCommand request, CancellationToken cancellationToken)
     {
-        // 1. Validar se a sesso de chat existe
+        // 1. Validar se a sessão de chat existe
         var chatSession = await _chatSessionRepository.GetByIdAsync(request.ChatSessionId, cancellationToken);
         if (chatSession == null)
         {
-            throw new NotFoundException("Sesso de chat no encontrada.");
+            throw new NotFoundException("Sessão de chat não encontrada.");
         }
 
-        // 2. Selecionar a estratgia de resposta do bot
-        var strategy = _botResponseStrategyFactory.GetStrategy(request);
+        // 2. Selecionar a estratégia de resposta do bot (agora assíncrona)
+        var strategy = await _botResponseStrategyFactory.GetStrategy(request);
 
-        // 3. Gerar o contedo da resposta do bot usando a estratgia selecionada
-        // ALTERADO: Adicionado await na chamada de GenerateResponse
+        // 3. Gerar o conteúdo da resposta do bot usando a estratégia selecionada
         var botResponseContent = await strategy.GenerateResponse(request);
 
         // 4. Criar a entidade Message para a resposta do bot
@@ -56,17 +55,17 @@ public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessa
         {
             ChatSessionId = request.ChatSessionId,
             UserId = null, // Mensagem do bot, sem UserId associado diretamente
-            Content = botResponseContent, // Contedo j  MessageContent, no precisa de converso explcita
+            Content = botResponseContent, // Conteúdo já é MessageContent
             Type = MessageType.BotResponse,
             IsFromBot = true,
             SentAt = DateTime.UtcNow,
-            CreatedBy = "BotSystem" // Usar um nome de auditoria para o bot
+            CreatedBy = "BotSystem"
         };
 
-        // 5. Adicionar a mensagem do bot ao repositrio
+        // 5. Adicionar a mensagem do bot ao repositório
         await _messageRepository.AddAsync(botMessage, cancellationToken);
 
-        // 6. Salvar as mudanas
+        // 6. Salvar as mudanças
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 7. Retornar a resposta
@@ -74,7 +73,7 @@ public class ProcessUserMessageCommandHandler : IRequestHandler<ProcessUserMessa
         {
             MessageId = botMessage.Id,
             ChatSessionId = botMessage.ChatSessionId,
-            BotMessageContent = botMessage.Content.Value, // Acessa o valor string do MessageContent para o DTO
+            BotMessageContent = botMessage.Content.Value,
             SentAt = botMessage.SentAt
         });
     }

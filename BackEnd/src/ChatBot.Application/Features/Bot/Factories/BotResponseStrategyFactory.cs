@@ -2,6 +2,7 @@
 using ChatBot.Application.Features.Bot.Strategies;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace ChatBot.Application.Features.Bot.Factories;
 
@@ -12,37 +13,43 @@ namespace ChatBot.Application.Features.Bot.Factories;
 public class BotResponseStrategyFactory : IBotResponseStrategyFactory
 {
     private readonly IEnumerable<IBotResponseStrategy> _strategies;
+    private readonly ILogger<BotResponseStrategyFactory> _logger;
 
-    public BotResponseStrategyFactory(IEnumerable<IBotResponseStrategy> strategies)
+    public BotResponseStrategyFactory(IEnumerable<IBotResponseStrategy> strategies, ILogger<BotResponseStrategyFactory> logger)
     {
-        // O IEnumerable injetará todas as implementações registradas de IBotResponseStrategy
         _strategies = strategies;
+        _logger = logger;
     }
 
-    public IBotResponseStrategy GetStrategy(ProcessUserMessageCommand command)
+    public async Task<IBotResponseStrategy> GetStrategy(ProcessUserMessageCommand command)
     {
-        // Prioridade: ExitCommand > KeywordBased > Random (fallback)
-        // A ordem de registro no DI pode influenciar, mas para maior controle,
-        // pode-se ter uma lista ordenada ou lógica de prioridade aqui.
-        // Por simplicidade, FirstOrDefault que pode lidar. RandomStrategy sempre pode lidar,
-        // então deve ser a última na lista (ou ser explicitamente tratada como fallback).
+        _logger.LogInformation("Selecionando estratégia para mensagem: '{Message}'", command.UserMessage);
 
-        // Exemplo de lógica de prioridade:
-        if (_strategies.Any(s => s is ExitCommandStrategy && s.CanHandle(command)))
+        // 1. Verificar comando de saída primeiro
+        var exitStrategy = _strategies.FirstOrDefault(s => s is ExitCommandStrategy);
+        if (exitStrategy != null && await exitStrategy.CanHandle(command))
         {
-            return _strategies.First(s => s is ExitCommandStrategy);
+            _logger.LogInformation("Estratégia selecionada: ExitCommandStrategy");
+            return exitStrategy;
         }
-        if (_strategies.Any(s => s is KeywordBasedResponseStrategy && s.CanHandle(command)))
-        {
-            return _strategies.First(s => s is KeywordBasedResponseStrategy);
-        }
-        // Fallback para a estratégia aleatória se nenhuma outra se aplicar
-        return _strategies.First(s => s is RandomResponseStrategy);
 
-        // Alternativamente, se CanHandle retornar true apenas para uma estratégia,
-        // e RandomResponseStrategy sempre retornar true, a linha abaixo funcionaria
-        // desde que RandomResponseStrategy seja a última verificada (ex: se as outras falharem o CanHandle)
-        // return _strategies.FirstOrDefault(s => s.CanHandle(command))
-        //        ?? throw new InvalidOperationException("No suitable bot response strategy found.");
+        // 2. Verificar estratégia baseada em palavras-chave
+        var keywordStrategy = _strategies.FirstOrDefault(s => s is KeywordBasedResponseStrategy);
+        if (keywordStrategy != null && await keywordStrategy.CanHandle(command))
+        {
+            _logger.LogInformation("Estratégia selecionada: KeywordBasedResponseStrategy");
+            return keywordStrategy;
+        }
+
+        // 3. Fallback para estratégia aleatória
+        var randomStrategy = _strategies.FirstOrDefault(s => s is RandomResponseStrategy);
+        if (randomStrategy != null)
+        {
+            _logger.LogInformation("Estratégia selecionada: RandomResponseStrategy (fallback)");
+            return randomStrategy;
+        }
+
+        _logger.LogError("Nenhuma estratégia de resposta do bot foi encontrada!");
+        throw new InvalidOperationException("Nenhuma estratégia de resposta do bot foi configurada.");
     }
 }

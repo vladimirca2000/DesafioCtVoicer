@@ -12,7 +12,7 @@ public interface IBotResponseStrategy // Esta é a interface
     /// <summary>
     /// Verifica se esta estratgia pode lidar com o comando de mensagem do usurio.
     /// </summary>
-    bool CanHandle(ProcessUserMessageCommand command);
+    Task<bool> CanHandle(ProcessUserMessageCommand command);
 
     /// <summary>
     /// Gera o contedo da resposta do bot de forma assncrona.

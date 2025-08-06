@@ -3,6 +3,7 @@ using System;
 using ChatBot.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ChatBot.Infrastructure.Migrations
 {
     [DbContext(typeof(ChatBotDbContext))]
-    partial class ChatBotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250806004133_UpdateBotResponsesWithMoreKeywords")]
+    partial class UpdateBotResponsesWithMoreKeywords
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,6 +122,28 @@ namespace ChatBot.Infrastructure.Migrations
                         },
                         new
                         {
+                            Id = new Guid("11111111-1111-1111-1111-111111111114"),
+                            Content = "Que bom te ver por aqui! Como posso te auxiliar?",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Priority = 4,
+                            Type = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111115"),
+                            Content = "Precisa de alguma informação? Estou aqui para isso!",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Priority = 5,
+                            Type = 1
+                        },
+                        new
+                        {
                             Id = new Guid("22222222-2222-2222-2222-222222222221"),
                             Content = "Olá! Seja muito bem-vindo(a)! Como posso te ajudar hoje?",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -132,7 +157,7 @@ namespace ChatBot.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            Content = "Claro! Estou aqui para ajudar. Você pode me perguntar sobre nossos produtos, serviços, preços, horários de funcionamento, ou formas de contato. O que você gostaria de saber?",
+                            Content = "Claro! Estou aqui para ajudar. Você pode me perguntar sobre nossos serviços, horários de funcionamento, ou qualquer dúvida que tiver.",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
@@ -144,84 +169,72 @@ namespace ChatBot.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222223"),
-                            Content = "Nossa equipe de suporte está sempre disponível! Para questões técnicas, você pode descrever seu problema aqui ou entrar em contato diretamente pelo telefone (11) 1234-5678. Como posso te direcionar melhor?",
+                            Content = "Nossa equipe de suporte está sempre disponível! Posso te ajudar com informações gerais ou te direcionar para o setor adequado.",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "suporte,apoio,atendimento,assistencia,assistência,problema,erro,bug",
+                            Keywords = "suporte,apoio,atendimento,assistencia,assistência",
                             Priority = 1,
                             Type = 2
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222224"),
-                            Content = "Posso te informar sobre nossos produtos, serviços, preços, horários de atendimento e formas de contato. Sobre qual tema específico você gostaria de saber mais?",
+                            Content = "Você gostaria de saber sobre nossos produtos, serviços, horários ou tem alguma dúvida específica?",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "informação,informações,info,saber,conhecer,duvida,dúvida,detalhes",
+                            Keywords = "informação,informações,info,saber,conhecer,duvida,dúvida",
                             Priority = 1,
                             Type = 2
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222225"),
-                            Content = "Temos uma ampla gama de produtos e serviços disponíveis! Para te ajudar melhor, você poderia me dizer que tipo de solução você está procurando? Posso te dar detalhes sobre características, preços e disponibilidade.",
+                            Content = "Temos uma variedade de produtos e serviços disponíveis! Gostaria de saber sobre algum em específico?",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "produto,produtos,serviço,serviços,oferta,ofertas,venda,vendas,comprar,adquirir",
+                            Keywords = "produto,produtos,serviço,serviços,oferta,ofertas,venda,vendas",
                             Priority = 1,
                             Type = 2
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222226"),
-                            Content = "Para informações detalhadas sobre preços e condições especiais, posso te conectar com nossa equipe comercial que fará um orçamento personalizado. Qual produto ou serviço te interessa? Também posso adiantar algumas informações gerais de valores.",
+                            Content = "Para informações sobre preços e valores, posso te direcionar para nossa equipe comercial. Qual produto ou serviço te interessa?",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "preço,preços,valor,valores,custo,custos,quanto custa,barato,caro,orçamento,investimento",
+                            Keywords = "preço,preços,valor,valores,custo,custos,quanto custa,barato,caro",
                             Priority = 1,
                             Type = 2
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222227"),
-                            Content = "Nosso horário de atendimento é:\n📅 Segunda a Sexta: 8h às 18h\n📅 Sábados: 8h às 12h\n📅 Domingos: Fechado\n\nEste chat está disponível 24h! Posso ajudar com mais alguma informação?",
+                            Content = "Nosso horário de atendimento é de segunda a sexta das 8h às 18h, e sábados das 8h às 12h. Posso ajudar com mais alguma coisa?",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "horário,horarios,funcionamento,aberto,fechado,atendimento,quando,abre,fecha",
+                            Keywords = "horário,horarios,funcionamento,aberto,fechado,atendimento",
                             Priority = 1,
                             Type = 2
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222228"),
-                            Content = "Você pode entrar em contato conosco através de:\n📞 Telefone: (11) 1234-5678\n📧 Email: contato@empresa.com\n💬 WhatsApp: (11) 99999-9999\n🌐 Site: www.empresa.com\n\nTambém posso te ajudar diretamente por este chat! O que você precisa?",
+                            Content = "Para entrar em contato conosco, você pode usar este chat, ligar para (11) 1234-5678 ou enviar um email para contato@empresa.com.",
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             IsActive = true,
                             IsDeleted = false,
-                            Keywords = "contato,telefone,email,falar,ligar,whatsapp,comunicar,conversar",
-                            Priority = 1,
-                            Type = 2
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222229"),
-                            Content = "Posso te orientar sobre nossos processos! Me diga qual procedimento você gostaria de entender melhor: como fazer um pedido, processo de compra, prazos de entrega, políticas de troca, ou qualquer outro processo específico.",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = "System",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Keywords = "como,fazer,processo,procedimento,passo,etapa,orientação,tutorial",
+                            Keywords = "contato,telefone,email,falar,ligar,whatsapp",
                             Priority = 1,
                             Type = 2
                         });

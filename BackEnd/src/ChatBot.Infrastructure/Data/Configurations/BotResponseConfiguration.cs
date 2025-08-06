@@ -39,5 +39,6 @@ public class BotResponseConfiguration : IEntityTypeConfiguration<BotResponse>
         builder.HasIndex(x => x.IsActive);
         builder.HasIndex(x => x.Priority);
         builder.HasIndex(x => x.IsDeleted);
+        
     }
 }

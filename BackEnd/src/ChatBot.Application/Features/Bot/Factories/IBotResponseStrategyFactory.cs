@@ -8,5 +8,5 @@ namespace ChatBot.Application.Features.Bot.Factories;
 /// </summary>
 public interface IBotResponseStrategyFactory
 {
-    IBotResponseStrategy GetStrategy(ProcessUserMessageCommand command);
+    Task<IBotResponseStrategy> GetStrategy(ProcessUserMessageCommand command);
 }

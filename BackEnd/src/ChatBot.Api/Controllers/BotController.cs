@@ -22,11 +22,12 @@ public class BotController : ControllerBase
     [HttpGet]
     public IActionResult Index()
     {
-        return Ok("Hello from BotController");
+        return Ok("Olá sou V]Bot de F1");
     }
 
     /// <summary>
     /// Processa uma mensagem de usuário e retorna a resposta do bot.
+    /// Observação: Este endpoint pode ser desnecessário se o BotAutoResponseEventHandler estiver funcionando.
     /// </summary>
     /// <param name="command">Comando contendo a mensagem do usuário e detalhes da sessão.</param>
     /// <param name="cancellationToken"></param>
@@ -39,6 +40,16 @@ public class BotController : ControllerBase
     public async Task<IActionResult> ProcessUserMessage([FromBody] ProcessUserMessageCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result.Value); // O middleware de exceções cuidará dos casos de falha.
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ChatBot.Shared.DTOs.General.ErrorResponse
+            {
+                Title = "Falha ao Processar Mensagem",
+                Status = (int)HttpStatusCode.BadRequest,
+                Detail = "Um ou mais erros ocorreram ao processar a mensagem.",
+                Messages = result.Errors
+            });
+        }
+        return Ok(result.Value);
     }
 }
