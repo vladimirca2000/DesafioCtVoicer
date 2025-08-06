@@ -8,7 +8,7 @@ public record MessageContent
 {
     public string Value { get; private set; }
 
-    // Definir limites para o conteúdo da mensagem
+    
     private const int MinLength = 1;
     private const int MaxLength = 2000; // Conforme definido na configuração do EF Core
 

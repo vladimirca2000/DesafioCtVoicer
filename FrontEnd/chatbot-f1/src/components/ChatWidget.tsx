@@ -1,17 +1,15 @@
-// src/components/ChatWidget.tsx
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react'; // Ícones
-import { useAppSelector, useAppDispatch, setUser, setChatSession, addMessage, setChatStatus, setChatError, clearChat, clearUser, Message } from '@/store/store'; // Adicionado 'Message' import
-import Image from 'next/image'; // Para usar a imagem customizada
+import { Send } from 'lucide-react';
+import { useAppSelector, useAppDispatch, setUser, setChatSession, addMessage, setChatStatus, setChatError, clearChat, clearUser, Message } from '@/store/store';
+import Image from 'next/image';
 
-// Importações dos componentes Shadcn UI (assumindo que foram adicionados via npx shadcn-ui add)
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import apiClient from '@/lib/api'; // Cliente axios configurado
-import { createSignalRConnection, signalR } from '@/lib/signalr'; // Para SignalR
+import apiClient from '@/lib/api';
+import { createSignalRConnection, signalR } from '@/lib/signalr';
 
 const SIGNALR_HUB_URL = process.env.NEXT_PUBLIC_SIGNALR_HUB_URL;
 
@@ -24,25 +22,16 @@ export default function ChatWidget() {
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [messageInput, setMessageInput] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false); // Novo estado para evitar duplo submit
+  const [isRegistering, setIsRegistering] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   useEffect(() => {
-    // Scroll para o final das mensagens
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
-    console.log('🔄 Status do chat mudou para:', status);
-    console.log('🔄 Chat está aberto:', isChatOpen);
-    console.log('🔄 Session ID atual:', sessionId);
-    console.log('🔄 Usuário autenticado:', isAuthenticated);
-    console.log('🔄 User ID atual:', userId);
-    console.log('🔄 User Name atual:', userName);
-    
-    // Focar no campo de input quando o status for 'open' e o chat estiver aberto
     if (status === 'open' && isChatOpen) {
       setTimeout(() => {
         messageInputRef.current?.focus();
@@ -51,30 +40,19 @@ export default function ChatWidget() {
   }, [status, isChatOpen, sessionId, isAuthenticated, userId, userName]);
 
   useEffect(() => {
-    console.log('🔧 SignalR useEffect executado:', { isChatOpen, sessionId, hasConnection: !!connectionRef.current });
-    
     if (isChatOpen && sessionId && !connectionRef.current) {
-      // Inicia a conexão SignalR se o chat estiver aberto e houver uma sessão
-      console.log('🚀 Iniciando nova conexão SignalR...');
       const newConnection = createSignalRConnection();
       
       if (!newConnection) {
-        console.error('❌ Falha ao criar conexão SignalR');
         dispatch(setChatError('Erro ao configurar conexão de chat em tempo real.'));
         return;
       }
 
-      console.log('📡 Configurando eventos SignalR...');
       newConnection.on('ReceiveMessage', (message: Message) => {
-        console.log('📨 Mensagem recebida via SignalR:', message);
         dispatch(addMessage(message));
       });
 
       newConnection.on('ChatSessionEnded', (data: { chatSessionId: string; reason: string }) => {
-        console.log('🔔 SignalR: ChatSessionEnded recebido:', data);
-        console.log('🔔 Razão do encerramento:', data.reason);
-        console.log('🔔 Session ID:', data.chatSessionId);
-        
         dispatch(addMessage({
           id: `system-${Date.now()}`,
           chatSessionId: data.chatSessionId,
@@ -84,61 +62,47 @@ export default function ChatWidget() {
           sentAt: new Date().toISOString(),
         }));
         
-        console.log('🔔 Executando clearChat() e setIsChatOpen(false)');
-        dispatch(clearChat()); // Limpa o estado da sessão e fecha o chat
-        dispatch(clearUser()); // Limpa dados do usuário (força reautenticação)
+        dispatch(clearChat());
+        dispatch(clearUser());
         setIsChatOpen(false);
       });
 
       newConnection.start()
         .then(() => {
-          console.log('✅ SignalR Connected!');
-          // Se reconectando, junte-se ao grupo da sessão novamente
           if (sessionId) {
-            console.log('🔗 Juntando-se ao grupo da sessão:', sessionId);
             newConnection.invoke('JoinChat', sessionId).catch(err => console.error('❌ Erro ao juntar ao grupo:', err));
           }
         })
         .catch(err => {
-          console.error('❌ Error while connecting to SignalR: ', err);
           dispatch(setChatError('Erro ao conectar ao chat em tempo real.'));
         });
 
       connectionRef.current = newConnection;
     } else if (!isChatOpen && connectionRef.current) {
-      // Fecha a conexão SignalR quando o chat é fechado
-      console.log('🔌 Fechando conexão SignalR...');
       connectionRef.current.stop().then(() => {
-        console.log('✅ SignalR Disconnected!');
         connectionRef.current = null;
       });
     }
 
-    // Limpeza ao desmontar o componente
     return () => {
       if (connectionRef.current) {
-        console.log('🧹 Limpeza: Fechando conexão SignalR...');
         connectionRef.current.stop();
         connectionRef.current = null;
       }
     };
-  }, [isChatOpen, sessionId, dispatch]); // Adicione sessionId para que o effect re-execute se a sessão mudar
+  }, [isChatOpen, sessionId, dispatch]);
 
   const handleOpenChat = () => {
     setIsChatOpen(true);
     if (!isAuthenticated) {
       dispatch(setChatStatus('authenticating'));
     } else if (!sessionId) {
-      // Se autenticado mas sem sessão ativa, tentar buscar uma sessão existente ou iniciar uma nova.
       checkOrStartChatSession(userId!, userName).catch((error) => {
-        console.error('Erro ao abrir chat:', error);
         dispatch(setChatError('Erro ao iniciar sessão de chat.'));
       });
       dispatch(setChatStatus('open'));
     } else {
-      // Sessão ativa - abrir diretamente e focar no campo de mensagem
       dispatch(setChatStatus('open'));
-      // Focar no campo de mensagem após um pequeno delay para garantir que o dialog foi renderizado
       setTimeout(() => {
         messageInputRef.current?.focus();
       }, 100);
@@ -146,12 +110,9 @@ export default function ChatWidget() {
   };
 
   const handleCloseChat = () => {
-    console.log('🚪 handleCloseChat chamado - usuário fechou manualmente');
     setIsChatOpen(false);
     dispatch(setChatStatus('closed'));
     dispatch(setChatError(null));
-    // Não limpa user/session aqui, apenas esconde o widget.
-    // A sessão só será limpa se o backend a encerrar explicitamente.
   };
 
   const handleEmailSubmit = async () => {
@@ -161,7 +122,6 @@ export default function ChatWidget() {
       return;
     }
 
-    // Validação básica de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailInput)) {
       dispatch(setChatError('Por favor, insira um e-mail válido.'));
@@ -169,153 +129,71 @@ export default function ChatWidget() {
     }
 
     try {
-      // 1. Verificar e-mail no backend (se é válido e ativo)
-      console.log('🔍 Verificando email:', emailInput);
       const checkEmailResponse = await apiClient.get(`/Users/by-email?email=${encodeURIComponent(emailInput)}`);
-      console.log('📡 Status da resposta:', checkEmailResponse.status);
-      console.log('📡 Headers da resposta:', checkEmailResponse.headers);
-      console.log('📡 Dados brutos da resposta:', checkEmailResponse.data);
+      const userData = checkEmailResponse.data;
       
-      const userData = checkEmailResponse.data; // Backend retorna objeto diretamente, não Result<T>
-      console.log('📧 Dados do usuário extraídos:', userData);
-      console.log('📧 Tipo de userData:', typeof userData);
-      console.log('📧 userData é null?', userData === null);
-      console.log('📧 userData é undefined?', userData === undefined);
-      console.log('📧 Estrutura completa de checkEmailResponse.data:', JSON.stringify(checkEmailResponse.data, null, 2));
-      
-      // Verificar se userData existe
       if (!userData) {
-        console.error('❌ userData é null ou undefined');
-        console.error('❌ Possíveis razões:');
-        console.error('  1. Backend não retornou propriedade "value"');
-        console.error('  2. Propriedade "value" está null/undefined'); 
-        console.error('  3. Estrutura da resposta mudou');
-        console.error('❌ Estrutura da resposta completa:', checkEmailResponse.data);
-        
-        // Tentar outras propriedades comuns
-        if (checkEmailResponse.data.data) {
-          console.log('🔍 Tentando usar checkEmailResponse.data.data:', checkEmailResponse.data.data);
-        }
-        if (checkEmailResponse.data.user) {
-          console.log('🔍 Tentando usar checkEmailResponse.data.user:', checkEmailResponse.data.user);
-        }
-        if (checkEmailResponse.data.result) {
-          console.log('🔍 Tentando usar checkEmailResponse.data.result:', checkEmailResponse.data.result);
-        }
-        
         dispatch(setChatError('Dados do usuário não encontrados na resposta.'));
         return;
       }
       
-      // Verificar se o usuário está ativo
       if (!userData.isActive) {
-        console.log('⚠️ Usuário encontrado mas inativo');
         dispatch(setChatStatus('registering'));
-        // Usar mensagem padrão, pois esta é uma verificação local baseada na propriedade isActive
         dispatch(setChatError('E-mail encontrado mas não está ativo. Por favor, insira seu nome para reativar.'));
         return;
       }
 
-      // Usuário válido e ativo - recuperar dados
-      console.log('✅ Usuário válido encontrado:', userData);
-      console.log('🔍 Estrutura COMPLETA do userData (email existente):', JSON.stringify(userData, null, 2));
-      console.log('🔍 Propriedades disponíveis:', Object.keys(userData));
-      
-      // Verificar qual propriedade contém o ID do usuário
       const userIdRaw = userData.id || userData.userId || userData.ID || userData.UserId;
-      const userId = userIdRaw ? String(userIdRaw) : null; // Garantir que seja string
-      console.log('🔍 ID bruto do usuário:', userIdRaw);
-      console.log('🔍 Tipo do ID bruto:', typeof userIdRaw);
-      console.log('🔍 ID convertido para string:', userId);
-      console.log('🔍 Tipo do ID convertido:', typeof userId);
-      console.log('🔍 Nome do usuário:', userData.name);
-      console.log('🔍 Email do usuário:', userData.email);
+      const userId = userIdRaw ? String(userIdRaw) : null;
       
       if (!userId || userId === 'null' || userId === 'undefined') {
-        console.error('❌ ERRO CRÍTICO: Nenhum ID de usuário válido encontrado (email existente)');
-        console.error('❌ ID bruto:', userIdRaw);
-        console.error('❌ ID convertido:', userId);
-        console.error('❌ Propriedades testadas: id, userId, ID, UserId');
-        console.error('❌ Estrutura completa:', userData);
         dispatch(setChatError('Erro: ID do usuário não retornado pela API.'));
         return;
       }
       
       try {
-        console.log('🔄 Salvando dados do usuário no Redux...');
         dispatch(setUser({ 
-          id: userId, // Usar o ID detectado
+          id: userId,
           name: userData.name, 
           email: userData.email 
         }));
-        console.log('✅ Dados do usuário salvos no Redux');
       } catch (reduxError: any) {
-        console.error('❌ Erro ao salvar dados no Redux:', reduxError);
         dispatch(setChatError('Erro interno. Tente novamente.'));
         return;
       }
       
-      // Verificar se há sessão ativa existente ou iniciar nova
-      console.log('🔍 Iniciando verificação de sessão para usuário autenticado...');
       try {
-        await checkOrStartChatSession(userId, userData.name); // Usar o ID detectado
-        console.log('✅ Processo de verificação/início de sessão concluído');
-        // Não é necessário chamar setChatStatus('open') pois setChatSession já faz isso
+        await checkOrStartChatSession(userId, userData.name);
       } catch (sessionError: any) {
-        console.error('❌ Erro CAPTURADO na verificação de sessão:', sessionError);
-        // Este erro pode estar sendo lançado pela checkOrStartChatSession
         dispatch(setChatError('Erro ao verificar sessão de chat.'));
-        // Força status open mesmo com erro de sessão para permitir tentativa manual
         dispatch(setChatStatus('open'));
       }
     } catch (apiError: any) {
-      console.error('❌ Erro ao verificar e-mail/usuário:', apiError);
-      console.error('❌ Detalhes do erro de email:', {
-        status: apiError.response?.status,
-        statusText: apiError.response?.statusText,
-        data: apiError.response?.data,
-        message: apiError.message
-      });
-      
       if (apiError.response && apiError.response.status === 404) {
-        // E-mail não encontrado, solicitar nome para cadastro
-        console.log('ℹ️ Email não encontrado (404), redirecionando para registro');
         dispatch(setChatStatus('registering'));
-        // Usar mensagem da API se disponível
         const apiMessage = apiError.response?.data?.message || apiError.response?.data?.title;
         dispatch(setChatError(apiMessage || 'E-mail não encontrado. Por favor, insira seu nome para se cadastrar.'));
       } else if (apiError.response && apiError.response.data) {
-        // Usar mensagem da API
         let errorMessage = '';
         
         if (apiError.response.data.errors) {
-          // Erros de validação do .NET
           const errors = Object.values(apiError.response.data.errors).flat();
           errorMessage = errors.join(', ');
         } else if (apiError.response.data.message) {
-          // Mensagem padrão da API
           errorMessage = apiError.response.data.message;
         } else if (apiError.response.data.title) {
-          // Título do erro
           errorMessage = apiError.response.data.title;
         }
         
-        console.error('❌ Mensagem de erro da API:', errorMessage);
         dispatch(setChatError(errorMessage));
       } else {
-        // Fallback apenas se não houver resposta da API
-        console.error('❌ Erro sem resposta da API');
         dispatch(setChatError('Erro de conexão. Tente novamente.'));
       }
     }
   };
 
   const handleRegisterUser = async () => {
-    console.log('🚀 === INICIO handleRegisterUser ===');
-    
-    // Prevenir chamadas duplas
     if (isRegistering) {
-      console.log('⚠️ handleRegisterUser já está em execução, ignorando chamada dupla');
       return;
     }
     
@@ -329,135 +207,66 @@ export default function ChatWidget() {
     }
 
     try {
-      // 2. Cadastrar novo usuário
-      console.log('📝 Enviando dados para cadastro:', {
-        name: nameInput,
-        email: emailInput,
-        isActive: true
-      });
-      
-      console.log('📤 Fazendo requisição POST para /Users...');
-      console.log('ℹ️ NOTA: Você pode ver um 204 seguido de 201 - isso é normal (CORS preflight + requisição real)');
-      
       const registerResponse = await apiClient.post(`/Users`, {
         name: nameInput,
         email: emailInput,
-        isActive: true, // Ou defina a lógica de ativação
+        isActive: true,
       });
       
-      console.log('📡 Status da resposta de cadastro:', registerResponse.status);
-      console.log('📡 Headers da resposta de cadastro:', registerResponse.headers);
-      console.log('📡 Dados brutos da resposta de cadastro:', registerResponse.data);
-      console.log('📡 Config da requisição:', registerResponse.config?.url);
-      
-      // Verificar se é status 201 (Created) como esperado
       if (registerResponse.status !== 201) {
-        console.warn('⚠️ Status de resposta inesperado:', registerResponse.status);
-        console.warn('⚠️ Esperado: 201 (Created), Recebido:', registerResponse.status);
       }
       
-      const userData = registerResponse.data; // Backend retorna objeto diretamente, não Result<T>
+      const userData = registerResponse.data;
       
-      // Usuário criado com sucesso - recuperar dados (mesmo comportamento do email existente)
-      console.log('✅ Usuário criado com sucesso:', userData);
-      console.log('🔍 Estrutura COMPLETA do userData:', JSON.stringify(userData, null, 2));
-      console.log('🔍 Propriedades disponíveis:', Object.keys(userData));
-      console.log('🔍 Estrutura detalhada do userData:', {
-        id: userData.id,
-        userId: userData.userId,
-        name: userData.name,
-        email: userData.email,
-        isActive: userData.isActive
-      });
-      
-      // Verificar qual propriedade contém o ID do usuário
       const userIdRaw = userData.id || userData.userId || userData.ID || userData.UserId;
-      const userId = userIdRaw ? String(userIdRaw) : null; // Garantir que seja string
-      console.log('🔍 ID bruto do usuário:', userIdRaw);
-      console.log('🔍 Tipo do ID bruto:', typeof userIdRaw);
-      console.log('🔍 ID convertido para string:', userId);
-      console.log('🔍 Tipo do ID convertido:', typeof userId);
+      const userId = userIdRaw ? String(userIdRaw) : null;
       
       if (!userId || userId === 'null' || userId === 'undefined') {
-        console.error('❌ ERRO CRÍTICO: Nenhum ID de usuário válido encontrado');
-        console.error('❌ ID bruto:', userIdRaw);
-        console.error('❌ ID convertido:', userId);
-        console.error('❌ Propriedades testadas: id, userId, ID, UserId');
-        console.error('❌ Estrutura completa:', userData);
         dispatch(setChatError('Erro: ID do usuário não retornado pela API.'));
         setIsRegistering(false);
         return;
       }
       
-      console.log('🔄 Salvando dados do usuário recém-criado no Redux...');
       dispatch(setUser({ 
-        id: userId, // Usar o ID detectado
+        id: userId,
         name: userData.name, 
         email: userData.email 
       }));
-      console.log('✅ Dados do usuário recém-criado salvos no Redux');
-      console.log('🔍 Estado após salvamento - isAuthenticated deveria ser true agora');
       
-      // IMPORTANTE: Aguardar um momento para o Redux atualizar o estado
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Verificar se há sessão ativa existente ou iniciar nova (mesmo fluxo do email existente)
-      console.log('🔍 Iniciando verificação de sessão para usuário recém-criado...');
-      console.log('🔍 ID que será usado:', userId);
-      console.log('🔍 Nome que será usado:', userData.name);
-      
       try {
-        await checkOrStartChatSession(userId, userData.name); // Usar o ID detectado
-        console.log('✅ Processo de verificação/início de sessão concluído para novo usuário');
+        await checkOrStartChatSession(userId, userData.name);
         
-        // Limpar inputs após sucesso
         setEmailInput('');
         setNameInput('');
         
-        // Não é necessário chamar setChatStatus('open') pois setChatSession já faz isso
-        console.log('✅ Usuário registrado e chat configurado com sucesso');
-        
       } catch (sessionError: any) {
-        console.error('❌ Erro CAPTURADO na verificação de sessão para novo usuário:', sessionError);
-        // Este erro pode estar sendo lançado pela checkOrStartChatSession
         dispatch(setChatError('Erro ao iniciar sessão de chat para novo usuário.'));
-        // Força status open mesmo com erro de sessão para permitir tentativa manual
         dispatch(setChatStatus('open'));
       }
       
-      console.log('🚀 === FIM handleRegisterUser (sucesso) ===');
-      setIsRegistering(false); // Liberar para próximas tentativas
+      setIsRegistering(false);
       
     } catch (apiError: any) {
-      console.error('❌ === ERRO handleRegisterUser ===');
-      console.error('Erro ao registrar usuário:', apiError);
-      
       if (apiError.response && apiError.response.data) {
-        // Usar mensagem da API
         let errorMessage = '';
         
         if (apiError.response.data.errors) {
-          // Erros de validação do .NET
           const errors = Object.values(apiError.response.data.errors).flat();
           errorMessage = errors.join(', ');
         } else if (apiError.response.data.message) {
-          // Mensagem padrão da API
           errorMessage = apiError.response.data.message;
         } else if (apiError.response.data.title) {
-          // Título do erro
           errorMessage = apiError.response.data.title;
         }
         
-        console.error('❌ Mensagem de erro da API:', errorMessage);
         dispatch(setChatError(errorMessage));
       } else {
-        // Fallback apenas se não houver resposta da API
-        console.error('❌ Erro sem resposta da API');
         dispatch(setChatError('Erro de conexão. Tente novamente.'));
       }
       
-      console.log('🚀 === FIM handleRegisterUser (erro) ===');
-      setIsRegistering(false); // Liberar para próximas tentativas
+      setIsRegistering(false);
     }
   };
 
@@ -467,14 +276,7 @@ export default function ChatWidget() {
     console.log('🔍 Tipo do currentUserId:', typeof currentUserId);
     console.log('🔍 currentUserId é null?', currentUserId === null);
     console.log('🔍 currentUserId é undefined?', currentUserId === undefined);
-    console.log('🔍 currentUserId é string vazia?', currentUserId === '');
-    console.log('🔍 currentUserId convertido para string:', String(currentUserId));
-    
-    // Verificar se os parâmetros são válidos
     if (!currentUserId || currentUserId === 'null' || currentUserId === 'undefined') {
-      console.error('❌ currentUserId é inválido:', currentUserId);
-      console.error('❌ Tipo:', typeof currentUserId);
-      console.error('❌ Valor convertido para string:', String(currentUserId));
       dispatch(setChatError('ID do usuário inválido.'));
       return;
     }
@@ -482,31 +284,18 @@ export default function ChatWidget() {
     dispatch(setChatError(null));
     
     try {
-      // Primeiro, tenta recuperar sessão ativa existente
       try {
-        console.log('🔍 Buscando sessão ativa...');
-        console.log('🔍 URL da requisição:', `/Chat/active-session?userId=${currentUserId}`);
         const activeSessionResponse = await apiClient.get(`/Chat/active-session?userId=${currentUserId}`);
-        console.log('📡 Status da resposta de sessão ativa:', activeSessionResponse.status);
-        console.log('📡 Dados brutos da resposta de sessão:', activeSessionResponse.data);
         
-        const sessionData = activeSessionResponse.data; // Backend retorna objeto diretamente
-        console.log('📝 Dados da sessão extraídos:', sessionData);
+        const sessionData = activeSessionResponse.data;
         
         if (sessionData && sessionData.chatSessionId) {
-          // Sessão ativa encontrada - recuperar dados
-          console.log('✅ Sessão ativa encontrada:', sessionData.chatSessionId);
           dispatch(setChatSession({ sessionId: sessionData.chatSessionId }));
           
-          // Recuperar histórico de mensagens
-          console.log('📚 Recuperando histórico de mensagens...');
           try {
             const historyResponse = await apiClient.get(`/Chat/history?chatSessionId=${sessionData.chatSessionId}`);
-            const messages = historyResponse.data || []; // Backend retorna array diretamente
+            const messages = historyResponse.data || [];
             
-            console.log('📚 Mensagens recuperadas:', messages.length);
-            
-            // Adicionar mensagens ao estado em ordem cronológica
             messages.forEach((msg: any) => {
               dispatch(addMessage({
                 id: msg.messageId || msg.id,
@@ -518,36 +307,18 @@ export default function ChatWidget() {
               }));
             });
           } catch (historyError: any) {
-            console.warn('⚠️ Erro ao recuperar histórico, mas sessão será mantida:', historyError.message);
-            // Não falha por causa do histórico - sessão ainda é válida
           }
           
-          console.log('✅ Sessão ativa recuperada com sucesso:', sessionData.chatSessionId);
-          console.log('🔍 === FIM checkOrStartChatSession (sessão encontrada) ===');
           return;
-        } else {
-          console.log('ℹ️ Nenhuma sessão ativa retornada pelo servidor');
         }
       } catch (sessionError: any) {
-        console.log('⚠️ Erro ao buscar sessão ativa:', sessionError.response?.status, sessionError.message);
-        console.log('⚠️ Detalhes do erro de sessão:', sessionError);
-        // Se não encontrar sessão ativa (404), continua para criar nova
         if (sessionError.response?.status !== 404) {
-          console.error('❌ Erro não relacionado a "não encontrado":', sessionError);
-          // Não lança erro aqui, apenas log - tenta criar nova sessão
         }
-        console.log('ℹ️ Status 404 ou erro - tentando criar nova sessão...');
       }
       
-      // Não há sessão ativa - iniciar nova sessão
-      console.log('🆕 Iniciando nova sessão para o usuário...');
       try {
         await startChatSession(currentUserId, currentUserName, "Olá! Como posso ajudar você hoje?");
-        console.log('✅ Nova sessão criada com sucesso');
       } catch (startSessionError: any) {
-        console.error('❌ Erro ao criar nova sessão:', startSessionError);
-        console.error('❌ Stack trace do erro de start session:', startSessionError.stack);
-        // Usar mensagem da API se disponível
         let errorMessage = 'Erro ao iniciar nova sessão de chat.';
         
         if (startSessionError.response && startSessionError.response.data) {
@@ -562,12 +333,9 @@ export default function ChatWidget() {
         }
         
         dispatch(setChatError(errorMessage));
-        // Não lança erro - deixa o usuário tentar novamente
       }
       
     } catch (generalError: any) {
-      console.error('❌ Erro geral ao verificar/iniciar sessão de chat:', generalError);
-      // Usar mensagem da API se disponível
       let errorMessage = 'Erro ao verificar sessão de chat.';
       
       if (generalError.response && generalError.response.data) {
@@ -582,7 +350,6 @@ export default function ChatWidget() {
       }
       
       dispatch(setChatError(errorMessage));
-      // Não lança erro para não quebrar o fluxo principal
     }
     
     console.log('🔍 === FIM checkOrStartChatSession ===');
@@ -592,7 +359,6 @@ export default function ChatWidget() {
     console.log('🚀 === INICIO startChatSession ===');
     console.log('🚀 Parâmetros recebidos:', { currentUserId, currentUserName, initialMessageContent });
     
-    // Verificar se os parâmetros são válidos
     if (!currentUserId) {
       console.error('❌ currentUserId é inválido para startChatSession:', currentUserId);
       dispatch(setChatError('ID do usuário inválido para iniciar sessão.'));
@@ -602,7 +368,6 @@ export default function ChatWidget() {
     dispatch(setChatError(null));
     
     try {
-      // Tenta iniciar uma nova sessão. Se já houver uma, o backend pode retornar a existente ou criar uma nova.
       console.log('📤 Enviando requisição para start-session...');
       const sessionResponse = await apiClient.post(`/Chat/start-session`, {
         userId: currentUserId,
@@ -611,7 +376,7 @@ export default function ChatWidget() {
       });
       
       console.log('📥 Resposta do start-session:', sessionResponse.data);
-      const sessionData = sessionResponse.data; // Backend retorna objeto diretamente
+      const sessionData = sessionResponse.data;
       
       if (!sessionData || !sessionData.chatSessionId) {
         console.error('❌ Dados da sessão inválidos:', sessionData);
@@ -623,11 +388,10 @@ export default function ChatWidget() {
       dispatch(setChatSession({ sessionId: sessionData.chatSessionId }));
       console.log('✅ Sessão salva no Redux com ID:', sessionData.chatSessionId);
       
-      // Adicionar mensagem inicial apenas se retornada pelo backend
       if (sessionData.messageId && sessionData.initialMessage) {
         console.log('💬 Adicionando mensagem inicial:', sessionData.initialMessage);
         dispatch(addMessage({
-          id: sessionData.messageId, // ID da mensagem inicial
+          id: sessionData.messageId,
           chatSessionId: sessionData.chatSessionId,
           userId: sessionData.userId,
           content: sessionData.initialMessage,
@@ -639,7 +403,6 @@ export default function ChatWidget() {
         console.log('ℹ️ Nenhuma mensagem inicial retornada pelo backend');
       }
       
-      // Junte-se ao grupo SignalR para esta nova sessão
       console.log('📡 Conectando ao grupo SignalR...', sessionData.chatSessionId);
       if (connectionRef.current && connectionRef.current.state === signalR.HubConnectionState.Connected) {
         try {
@@ -665,25 +428,20 @@ export default function ChatWidget() {
       });
       
       if (apiError.response && apiError.response.data) {
-        // Usar mensagem da API
         let errorMessage = '';
         
         if (apiError.response.data.errors) {
-          // Erros de validação do .NET
           const errors = Object.values(apiError.response.data.errors).flat();
           errorMessage = errors.join(', ');
         } else if (apiError.response.data.message) {
-          // Mensagem padrão da API
           errorMessage = apiError.response.data.message;
         } else if (apiError.response.data.title) {
-          // Título do erro
           errorMessage = apiError.response.data.title;
         }
         
         console.error('❌ Mensagem de erro da API:', errorMessage);
         dispatch(setChatError(errorMessage));
       } else {
-        // Fallback apenas se não houver resposta da API
         console.error('❌ Erro sem resposta da API');
         dispatch(setChatError('Erro de conexão. Tente novamente.'));
       }
@@ -697,7 +455,7 @@ export default function ChatWidget() {
     if (!messageInput.trim() || !sessionId || !userId) return;
 
     const userMessage: Message = {
-      id: crypto.randomUUID(), // Gerar um ID único no frontend para exibição imediata
+      id: crypto.randomUUID(),
       chatSessionId: sessionId,
       userId: userId,
       content: messageInput,
@@ -705,11 +463,10 @@ export default function ChatWidget() {
       sentAt: new Date().toISOString(),
     };
 
-    dispatch(addMessage(userMessage)); // Adiciona a mensagem do usuário imediatamente
-    setMessageInput(''); // Limpa o input
+    dispatch(addMessage(userMessage));
+    setMessageInput('');
 
     try {
-      // Se a mensagem for 'sair', chama o endpoint de encerramento ANTES de enviar
       if (userMessage.content.toLowerCase().trim() === 'sair') {
         console.log('🚪 Usuário digitou "sair" - encerrando sessão...');
         
@@ -724,7 +481,6 @@ export default function ChatWidget() {
           if (endSessionResponse.status === 200) {
             console.log('✅ Sessão encerrada com sucesso - fechando modal');
             
-            // Adicionar mensagem de despedida
             dispatch(addMessage({
               id: `system-farewell-${Date.now()}`,
               chatSessionId: sessionId,
@@ -734,19 +490,17 @@ export default function ChatWidget() {
               sentAt: new Date().toISOString(),
             }));
             
-            // Aguardar um pouco para mostrar a mensagem de despedida
             setTimeout(() => {
               console.log('🚪 Fechando chat e limpando estado...');
-              dispatch(clearChat()); // Limpa dados da sessão
-              dispatch(clearUser()); // Limpa dados do usuário (força reautenticação)
+              dispatch(clearChat());
+              dispatch(clearUser());
               setIsChatOpen(false);
             }, 1500);
             
-            return; // Não continua com o fluxo normal de envio
+            return;
           }
         } catch (endSessionError: any) {
           console.error('❌ Erro ao encerrar sessão:', endSessionError);
-          // Se der erro ao encerrar, mostra erro mas continua
           let errorMessage = 'Erro ao encerrar sessão.';
           
           if (endSessionError.response && endSessionError.response.data) {
@@ -758,29 +512,26 @@ export default function ChatWidget() {
           }
           
           dispatch(setChatError(errorMessage));
-          return; // Não continua se deu erro
+          return;
         }
       }
 
-      // Fluxo normal para mensagens que não são "sair"
       console.log('📤 Enviando mensagem normal para o chat...');
       
-      // Envia mensagem do usuário para o backend
       await apiClient.post(`/Chat/send-message`, {
         chatSessionId: sessionId,
         userId: userId,
         content: userMessage.content,
-        messageType: 1, // MessageType.Text
+        messageType: 1,
       });
 
-      // Solicita resposta do bot
       const botResponse = await apiClient.post(`/Bot/process-message`, {
         chatSessionId: sessionId,
-        userId: userId, // Bot precisa do userId para contexto
+        userId: userId,
         userMessage: userMessage.content,
       });
       
-      const botMessageData = botResponse.data; // Backend retorna objeto diretamente
+      const botMessageData = botResponse.data;
       dispatch(addMessage({
         id: botMessageData.messageId,
         chatSessionId: botMessageData.chatSessionId,
@@ -794,25 +545,20 @@ export default function ChatWidget() {
       console.error('Erro ao enviar mensagem:', apiError);
       
       if (apiError.response && apiError.response.data) {
-        // Usar mensagem da API
         let errorMessage = '';
         
         if (apiError.response.data.errors) {
-          // Erros de validação do .NET
           const errors = Object.values(apiError.response.data.errors).flat();
           errorMessage = errors.join(', ');
         } else if (apiError.response.data.message) {
-          // Mensagem padrão da API
           errorMessage = apiError.response.data.message;
         } else if (apiError.response.data.title) {
-          // Título do erro
           errorMessage = apiError.response.data.title;
         }
         
         console.error('❌ Mensagem de erro da API:', errorMessage);
         dispatch(setChatError(errorMessage));
       } else {
-        // Fallback apenas se não houver resposta da API
         console.error('❌ Erro sem resposta da API');
         dispatch(setChatError('Erro de conexão. Tente novamente.'));
       }
@@ -852,7 +598,7 @@ export default function ChatWidget() {
             </DialogTitle>
           </DialogHeader>
 
-          {error && <p className="text-red-500 mt-2 p-4 text-center text-sm">{error}</p>} {/* Erro global */}
+          {error && <p className="text-red-500 mt-2 p-4 text-center text-sm">{error}</p>}
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm bg-gray-50 chat-scroll chat-messages-mobile">
             {status === 'authenticating' && (
@@ -920,8 +666,8 @@ export default function ChatWidget() {
                     <p className="text-sm">Inicie a conversa digitando uma mensagem abaixo.</p>
                   </div>
                 )}
-                {[...messages] // Criar cópia do array antes de ordenar
-                  .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()) // Ordenar por data
+                {[...messages]
+                  .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime())
                   .map((msg) => (
                   <div
                     key={msg.id}
@@ -949,7 +695,7 @@ export default function ChatWidget() {
                     </div>
                   </div>
                 ))}
-                <div ref={messagesEndRef} /> {/* Para scroll automático */}
+                <div ref={messagesEndRef} />
               </>
             )}
           </div>

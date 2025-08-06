@@ -34,7 +34,7 @@ public class BotResponseConfiguration : IEntityTypeConfiguration<BotResponse>
         builder.Property(x => x.DeletedBy)
             .HasMaxLength(100);
 
-        // Indexes
+        
         builder.HasIndex(x => x.Type);
         builder.HasIndex(x => x.IsActive);
         builder.HasIndex(x => x.Priority);

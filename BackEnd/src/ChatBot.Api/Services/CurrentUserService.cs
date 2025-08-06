@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using ChatBot.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Http; // Necessário para IHttpContextAccessor
+using Microsoft.AspNetCore.Http; 
 
 namespace ChatBot.Api.Services;
 
@@ -42,7 +42,7 @@ public class CurrentUserService : ICurrentUserService
         get
         {
             var userNameClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name) ??
-                                _httpContextAccessor.HttpContext?.User?.FindFirstValue("name"); // Algumas autenticações usam 'name'
+                                _httpContextAccessor.HttpContext?.User?.FindFirstValue("name"); 
 
             return userNameClaim ?? (IsAuthenticated ? "AuthenticatedUser" : "Anonymous");
         }

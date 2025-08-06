@@ -1,6 +1,6 @@
 ﻿using ChatBot.Application.Common.Interfaces;
-using Microsoft.Extensions.Caching.Distributed; // Usa IDistributedCache
-using System.Text.Json; // Para serialização/deserialização
+using Microsoft.Extensions.Caching.Distributed; 
+using System.Text.Json; 
 using System.Threading.Tasks;
 using System;
 
@@ -39,7 +39,7 @@ public class CacheService : ICacheService
         }
         else
         {
-            // Expiração padrão se nenhuma for especificada (ex: 5 minutos)
+            
             options.SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
         }
 

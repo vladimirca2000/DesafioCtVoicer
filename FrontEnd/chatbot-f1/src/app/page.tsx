@@ -1,5 +1,4 @@
-// src/app/page.tsx
-import Image from 'next/image'; // Importa o componente Image do Next.js
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -7,19 +6,21 @@ export default function Home() {
       <div className="bg-gray-100 p-8 rounded-lg shadow-md text-center">
         <h1 className="text-4xl font-bold mb-4">Vladimir</h1>
         <p className="text-lg text-gray-700 mb-8">Fã de Formula 1</p>
-        {/* Logo da Fórmula 1 com otimizações */}
         <Image
           src="/image/f1-logo.png"
-          alt="Logo da Formula 1"
-          width={250}
-          height={150}
-          priority={true} // Adiciona prioridade para LCP
-          className="mx-auto"
-          style={{
-            width: 'auto',
-            height: 'auto'
-          }}
+          alt="F1 Logo"
+          width={200}
+          height={120}
+          className="mx-auto mb-6"
+          priority={true}
         />
+        <h2 className="text-3xl font-bold text-red-600 mb-4">🏎️ Chat F1 Bot</h2>
+        <p className="text-lg text-gray-700 mb-8">
+          Bem-vindo ao nosso chatbot especializado em Fórmula 1! Tire suas dúvidas sobre corridas, pilotos, equipes e muito mais.
+        </p>
+        <p className="text-sm text-gray-600">
+          Clique no ícone de chat no canto inferior direito para começar uma conversa.
+        </p>
       </div>
     </div>
   );

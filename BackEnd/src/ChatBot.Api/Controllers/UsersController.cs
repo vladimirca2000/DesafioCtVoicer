@@ -1,6 +1,4 @@
-﻿// Conteúdo COMPLETO para ChatBot.Api/Controllers/UsersController.cs
-
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using ChatBot.Application.Features.Users.Commands.CreateUser;
@@ -11,7 +9,7 @@ using ChatBot.Application.Features.Users.Queries.GetUserSessions;
 using ChatBot.Application.Common.Models;
 using System.Collections.Generic;
 using ChatBot.Application.Features.Users.Queries.GetUserByEmail;
-using ChatBot.Shared.DTOs.General; // Adicionado para usar ErrorResponse
+using ChatBot.Shared.DTOs.General;
 
 namespace ChatBot.Api.Controllers;
 
@@ -34,15 +32,14 @@ public class UsersController : ControllerBase
     /// <returns>Detalhes do usurio criado.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(CreateUserResponse), (int)HttpStatusCode.Created)]
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)] // Alterado para refletir retorno de ErrorResponse
-    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.Conflict)] // Adicionado para refletir conflito de regras de negócio
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            // Verifica se o erro é de usuário duplicado para retornar 409 Conflict
             if (result.Errors.Any(e => e.Contains("Já existe um usuário com o e-mail")))
             {
                 return Conflict(new ErrorResponse
@@ -54,7 +51,6 @@ public class UsersController : ControllerBase
                 });
             }
             
-            // Para outros tipos de erro, retorna BadRequest
             return BadRequest(new ErrorResponse
             {
                 Title = "Falha ao criar usuário",
@@ -93,10 +89,7 @@ public class UsersController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         if (!result.IsSuccess)
         {
-            // Similar ao CreateUser, o middleware ainda pegará as NotFoundException e BusinessRuleException
-            // Este bloco seria mais útil se o handler retornasse Result.Failure para NotFound/BusinessRuleException
-            // sem lançar uma exceção.
-            if (result.Errors.Any(e => e.Contains("não encontrado"))) // Exemplo de heurística para NotFound
+            if (result.Errors.Any(e => e.Contains("não encontrado")))
             {
                 return NotFound(new ErrorResponse
                 {
@@ -159,13 +152,6 @@ public class UsersController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         if (!result.IsSuccess)
         {
-            // O handler GetUserByIdQueryHandler lança NotFoundException, que é pego pelo middleware.
-            // Para explicitá-lo aqui, você precisaria que o handler retornasse Result.Failure em vez de lançar.
-            // Se o handler fosse modificado para retornar Result.Failure(new NotFoundException(...).Message),
-            // então você poderia usar:
-            // return NotFound(new ErrorResponse { Title = "Usuário Não Encontrado", Status = (int)HttpStatusCode.NotFound, Detail = result.Errors.FirstOrDefault(), Messages = result.Errors });
-            // Por enquanto, o middleware ainda é o responsável final pelo 404.
-            // Manteremos a lógica para fins didáticos de como seria se o handler retornasse a falha.
             return NotFound(new ErrorResponse
             {
                 Title = "Usuário Não Encontrado",
@@ -194,9 +180,6 @@ public class UsersController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         if (!result.IsSuccess)
         {
-            // O handler GetUserByEmailQueryHandler lança NotFoundException, que é pego pelo middleware.
-            // O ValidationBehavior pega a ValidationException.
-            // Se o handler retornasse Result.Failure para NotFound/Validation, a lógica abaixo seria ativada.
             if (result.Errors.Any(e => e.Contains("não encontrado")))
             {
                 return NotFound(new ErrorResponse { Title = "Usuário Não Encontrado", Status = (int)HttpStatusCode.NotFound, Detail = result.Errors.FirstOrDefault(), Messages = result.Errors });

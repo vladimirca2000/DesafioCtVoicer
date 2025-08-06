@@ -1,8 +1,6 @@
-// src/store/store.ts
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
 
-// Definições de interfaces para os estados das slices
 interface UserState {
   id: string | null;
   name: string | null;
@@ -10,13 +8,13 @@ interface UserState {
   isAuthenticated: boolean;
 }
 
-export interface Message { // Exportado para ser usado em ChatWidget
+export interface Message {
   id: string;
   chatSessionId: string;
-  userId: string | null; // Null para mensagens do bot
+  userId: string | null;
   content: string;
   isFromBot: boolean;
-  sentAt: string; // ISO string
+  sentAt: string;
 }
 
 interface ChatState {
@@ -26,7 +24,6 @@ interface ChatState {
   error: string | null;
 }
 
-// Definição das slices
 const userSlice = createSlice({
   name: 'user',
   initialState: {
@@ -68,7 +65,7 @@ const chatSlice = createSlice({
     },
     setChatSession: (state, action: PayloadAction<{ sessionId: string }>) => {
       state.sessionId = action.payload.sessionId;
-      state.messages = []; // Limpa mensagens para nova sessão
+      state.messages = [];
       state.status = 'open';
     },
     addMessage: (state, action: PayloadAction<Message>) => {
@@ -89,11 +86,9 @@ const chatSlice = createSlice({
   },
 });
 
-// Exporta as ações das slices
 export const { setUser, clearUser } = userSlice.actions;
 export const { openChat, closeChat, setChatSession, addMessage, setChatStatus, setChatError, clearChat } = chatSlice.actions;
 
-// Configura o store do Redux
 export const store = configureStore({
   reducer: {
     user: userSlice.reducer,
@@ -101,10 +96,8 @@ export const store = configureStore({
   },
 });
 
-// Tipos inferidos do store para uso em hooks
 export type AppDispatch = typeof store.dispatch;
-export type RootState = ReturnType<typeof store.getState>; // Correção: remova a interface RootState duplicada aqui
+export type RootState = ReturnType<typeof store.getState>;
 
-// Hooks tipados para uso fácil em componentes
 export const useAppDispatch: () => AppDispatch = useDispatch;
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

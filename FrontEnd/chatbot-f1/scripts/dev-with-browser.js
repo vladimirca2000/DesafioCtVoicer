@@ -5,7 +5,6 @@ const http = require('http');
 
 console.log('🚀 Iniciando servidor Next.js...');
 
-// Função para verificar se o servidor está rodando
 function checkServer(callback) {
   const req = http.get('http://localhost:3000', (res) => {
     callback(true);
@@ -21,7 +20,6 @@ function checkServer(callback) {
   });
 }
 
-// Função para abrir o navegador
 function openBrowser() {
   const platform = process.platform;
   let command;
@@ -49,15 +47,13 @@ function openBrowser() {
   });
 }
 
-// Iniciar servidor Next.js
 const nextProcess = spawn('npm', ['run', 'dev'], {
   stdio: 'inherit',
   shell: true
 });
 
-// Aguardar servidor estar pronto e abrir navegador
 let attempts = 0;
-const maxAttempts = 30; // 30 segundos
+const maxAttempts = 30;
 
 const checkInterval = setInterval(() => {
   attempts++;
@@ -77,7 +73,6 @@ const checkInterval = setInterval(() => {
   });
 }, 1000);
 
-// Gerenciar encerramento
 process.on('SIGINT', () => {
   console.log('\n🛑 Encerrando servidor...');
   nextProcess.kill();

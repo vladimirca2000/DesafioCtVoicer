@@ -1,25 +1,20 @@
-/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Importar estilos do chat widget */
 @import '../styles/chat-widget.css';
 
-/* Adicione esta regra para ajuste de altura do conteúdo */
-/* Altura total da tela - (altura do navbar + altura do footer) */
 html, body {
   height: 100%;
 }
 
 .min-h-screen-minus-navbar-footer {
-  min-height: calc(100vh - 4rem - 2.5rem); /* Exemplo: Navbar 4rem, Footer 2.5rem, ajuste conforme necessário */
+  min-height: calc(100vh - 4rem - 2.5rem);
 }
 
-/* Ajuste o padding no main para que o conteúdo não fique escondido atrás do navbar */
 main {
-  padding-top: 4rem; /* Altura do navbar */
-  padding-bottom: 2.5rem; /* Altura do footer */
+  padding-top: 4rem;
+  padding-bottom: 2.5rem;
 }
 
 @layer base {

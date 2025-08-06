@@ -1,8 +1,6 @@
-// scripts/check-backend.js
 const https = require('https');
 const axios = require('axios');
 
-// Ignorar certificados SSL para desenvolvimento
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const API_URL = 'https://localhost:7000/api';
@@ -11,7 +9,6 @@ const SIGNALR_URL = 'https://localhost:7000/chathub';
 async function checkBackend() {
   console.log('🔍 Verificando conectividade com o backend...\n');
 
-  // Verificar API
   try {
     console.log('📡 Testando API...');
     const response = await axios.get(`${API_URL}/Users/by-email?email=test@test.com`, {
@@ -32,7 +29,6 @@ async function checkBackend() {
     }
   }
 
-  // Verificar SignalR Hub
   try {
     console.log('\n🔗 Testando SignalR Hub...');
     const response = await axios.get(SIGNALR_URL, {

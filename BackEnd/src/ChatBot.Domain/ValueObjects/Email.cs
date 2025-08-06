@@ -1,7 +1,5 @@
-﻿// C:\Desenvolvimento\DocChatBoot\BackEnd\src\ChatBot.Domain\ValueObjects\Email.cs
-
-using System.Net.Mail; // Para validação de formato de e-mail
-using System; // Necessário para ArgumentException
+﻿using System.Net.Mail; 
+using System; 
 
 namespace ChatBot.Domain.ValueObjects;
 
@@ -37,7 +35,7 @@ public record Email
         try
         {
             var mailAddress = new MailAddress(email);
-            // Correção aplicada: Normaliza o e-mail para minúsculas antes de armazenar.
+           
             return new Email(email.ToLowerInvariant());
         }
         catch (FormatException)

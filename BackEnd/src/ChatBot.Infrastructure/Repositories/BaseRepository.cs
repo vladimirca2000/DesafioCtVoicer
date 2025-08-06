@@ -19,7 +19,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     public virtual async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        // O Global Query Filter no DbContext já garante que registros deletados não sejam retornados
+        
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
@@ -44,7 +44,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         var entity = await _dbSet.FindAsync(new object[] { id }, cancellationToken);
         if (entity != null)
         {
-            // O SoftDeleteInterceptor no DbContext vai interceptar essa operação e marcar IsDeleted como true
+            
             _dbSet.Remove(entity);
         }
     }

@@ -1,8 +1,7 @@
-﻿using MediatR; // Necessário para IMediator
+﻿using MediatR; 
 using Microsoft.AspNetCore.Mvc;
-using System.Net; // Necessário para HttpStatusCode
-using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage; // O comando
-
+using System.Net; 
+using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage; 
 namespace ChatBot.Api.Controllers;
 
 [ApiController]

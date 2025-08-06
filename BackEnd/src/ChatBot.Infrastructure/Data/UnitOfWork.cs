@@ -1,8 +1,8 @@
 ﻿using ChatBot.Application.Common.Interfaces;
 using ChatBot.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Storage;
-using ChatBot.Domain.Interfaces; // Necessário para IDomainEvent
-using ChatBot.Domain.Entities; // Necessário para BaseEntity
+using ChatBot.Domain.Interfaces;
+using ChatBot.Domain.Entities;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -27,7 +27,7 @@ public class UnitOfWork : IUnitOfWork
     {
         if (_currentTransaction != null)
         {
-            return; // Transaction already started
+            return;
         }
 
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -42,7 +42,6 @@ public class UnitOfWork : IUnitOfWork
 
         try
         {
-            // SaveChangesAsync já foi chamado pelo TransactionBehavior antes do Commit
             await _currentTransaction.CommitAsync(cancellationToken);
         }
         catch
@@ -61,7 +60,7 @@ public class UnitOfWork : IUnitOfWork
     {
         if (_currentTransaction == null)
         {
-            return; // No transaction to rollback
+            return;
         }
         try
         {
@@ -74,10 +73,8 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    // Implementação dos novos métodos para Domain Events
     public IReadOnlyCollection<IDomainEvent> GetDomainEvents()
     {
-        // Coleta todos os eventos de domínio das entidades que estão sendo rastreadas pelo DbContext
         return _context.ChangeTracker.Entries<BaseEntity>()
             .Where(e => e.Entity.DomainEvents.Any())
             .SelectMany(e => e.Entity.DomainEvents)
@@ -86,9 +83,8 @@ public class UnitOfWork : IUnitOfWork
 
     public void ClearDomainEvents()
     {
-        // Limpa os eventos de domínio de todas as entidades rastreadas após a publicação
         _context.ChangeTracker.Entries<BaseEntity>()
-            .ToList() // .ToList() para evitar modificação da coleção durante a iteração
+            .ToList()
             .ForEach(e => e.Entity.ClearDomainEvents());
     }
 

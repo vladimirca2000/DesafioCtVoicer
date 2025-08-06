@@ -15,11 +15,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Registro dos interceptors (como scoped)
+        
         services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
         services.AddScoped<ISaveChangesInterceptor, SoftDeleteInterceptor>();
 
-        // Database
+        
         services.AddDbContext<ChatBotDbContext>((serviceProvider, options) =>
         {
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
@@ -29,40 +29,38 @@ public static class DependencyInjection
                 options.EnableDetailedErrors();
             }
 
-            // Adicionar interceptors via serviceProvider
+            
             var interceptors = serviceProvider.GetServices<ISaveChangesInterceptor>();
             options.AddInterceptors(interceptors);
         });
 
-        // UnitOfWork
+       
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Repositórios
+       
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
 
-        // Registro do repositório concreto de BotResponse
-        services.AddScoped<BotResponseRepository>(); // Implementação concreta
+        
+        services.AddScoped<BotResponseRepository>(); 
 
-        // Registro de IBotResponseRepository com o decorator de cache
+        
         services.AddScoped<IBotResponseRepository, CachedBotResponseRepository>(provider =>
         {
-            var concreteRepo = provider.GetRequiredService<BotResponseRepository>(); // Obtém a implementação concreta
-            var cacheService = provider.GetRequiredService<ICacheService>();      // Obtém o serviço de cache
-            return new CachedBotResponseRepository(concreteRepo, cacheService);   // Retorna o decorator
+            var concreteRepo = provider.GetRequiredService<BotResponseRepository>(); 
+            var cacheService = provider.GetRequiredService<ICacheService>();     
+            return new CachedBotResponseRepository(concreteRepo, cacheService);   
         });
 
-        // Serviços complementares
+        
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ICacheService, CacheService>();
 
-        // Configuração do cache distribuído (MemoryCache para desenvolvimento, Redis/SQL Server para produção)
+        
         services.AddDistributedMemoryCache(); // Usado para desenvolvimento/teste.
-        // Para produção, configure um cache distribuído real (Redis, SQL Server):
-        // services.AddStackExchangeRedisCache(options => { options.Configuration = configuration.GetConnectionString("Redis"); });
-        // services.AddDistributedSqlServerCache(options => { options.ConnectionString = configuration.GetConnectionString("SqlServerCache"); });
+        
 
         return services;
     }

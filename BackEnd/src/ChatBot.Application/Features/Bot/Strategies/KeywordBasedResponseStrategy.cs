@@ -1,19 +1,14 @@
-﻿// Conteúdo COMPLETO para ChatBot.Application/Features/Bot/Strategies/KeywordBasedResponseStrategy.cs
-
-using ChatBot.Domain.ValueObjects;
+﻿using ChatBot.Domain.ValueObjects;
 using ChatBot.Application.Features.Bot.Commands.ProcessUserMessage;
 using ChatBot.Domain.Repositories;
 using ChatBot.Domain.Enums;
-using ChatBot.Domain.Entities; // Adicionado para BotResponse
+using ChatBot.Domain.Entities;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace ChatBot.Application.Features.Bot.Strategies;
 
-/// <summary>
-/// Estratégia de resposta do bot baseada em análise contextual de palavras-chave.
-/// </summary>
 public class KeywordBasedResponseStrategy : IBotResponseStrategy
 {
     private readonly IBotResponseRepository _botResponseRepository;
@@ -48,7 +43,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
         if (string.IsNullOrEmpty(message))
             return string.Empty;
             
-        // Normalizar para lowercase e remover acentos básicos
         return message.ToLowerInvariant()
             .Replace("á", "a").Replace("à", "a").Replace("ã", "a").Replace("â", "a")
             .Replace("é", "e").Replace("ê", "e")
@@ -66,14 +60,12 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
         
         _logger.LogInformation("Analisando mensagem: '{Message}' com {WordCount} palavras", command.UserMessage, messageWords.Count);
         
-        // Buscar todas as respostas baseadas em palavras-chave
         var keywordResponses = (await _botResponseRepository.GetAllAsync())
             .Where(r => r.Type == BotResponseType.KeywordBased && r.IsActive && !r.IsDeleted && !string.IsNullOrEmpty(r.Keywords))
             .ToList();
 
         _logger.LogInformation("Encontradas {Count} respostas baseadas em palavras-chave", keywordResponses.Count);
 
-        // Analisar cada resposta e calcular pontuação contextual
         var matches = new List<(BotResponse response, double score, string matchType)>();
 
         foreach (var response in keywordResponses)
@@ -94,7 +86,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
             }
         }
 
-        // Selecionar a melhor resposta baseada na análise contextual
         if (matches.Any())
         {
             var bestMatch = matches
@@ -118,7 +109,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
         double score = 0;
         var matchTypes = new List<string>();
 
-        // 1. Verificar correspondências exatas de palavras (maior peso)
         var exactMatches = messageWords.Intersect(responseKeywords).ToList();
         if (exactMatches.Any())
         {
@@ -126,7 +116,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
             matchTypes.Add($"Exata({exactMatches.Count})");
         }
 
-        // 2. Verificar correspondências parciais/substring (peso médio)
         var partialMatches = responseKeywords.Where(keyword => message.Contains(keyword) && !exactMatches.Contains(keyword)).ToList();
         if (partialMatches.Any())
         {
@@ -134,7 +123,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
             matchTypes.Add($"Parcial({partialMatches.Count})");
         }
 
-        // 3. Análise contextual avançada baseada no tipo de pergunta
         var contextBonus = AnalyzeQuestionContext(message, responseKeywords, response);
         if (contextBonus > 0)
         {
@@ -142,14 +130,12 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
             matchTypes.Add($"Contexto(+{contextBonus:F1})");
         }
 
-        // 4. Penalizar respostas muito genéricas quando há palavras específicas
         if (IsSpecificQuestion(message) && IsGenericResponse(response))
         {
-            score *= 0.7; // Reduz pontuação em 30%
+            score *= 0.7;
             matchTypes.Add("Penalidade-Genérica");
         }
 
-        // 5. Bonus para correspondência de múltiplas palavras relacionadas
         var relatedWordsBonus = CalculateRelatedWordsBonus(messageWords, responseKeywords);
         if (relatedWordsBonus > 0)
         {
@@ -164,26 +150,25 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
     {
         double bonus = 0;
 
-        // Detectar tipo de pergunta e dar bonus para respostas mais apropriadas
         if (IsGreeting(message) && ContainsGreetingKeywords(responseKeywords))
         {
-            bonus += 3.0; // Bonus para saudações
+            bonus += 3.0;
         }
         else if (IsQuestionAboutPrice(message) && ContainsPriceKeywords(responseKeywords))
         {
-            bonus += 5.0; // Bonus alto para perguntas sobre preço
+            bonus += 5.0;
         }
         else if (IsQuestionAboutHours(message) && ContainsHourKeywords(responseKeywords))
         {
-            bonus += 5.0; // Bonus alto para perguntas sobre horário
+            bonus += 5.0;
         }
         else if (IsQuestionAboutContact(message) && ContainsContactKeywords(responseKeywords))
         {
-            bonus += 5.0; // Bonus alto para perguntas sobre contato
+            bonus += 5.0;
         }
         else if (IsHelpRequest(message) && ContainsHelpKeywords(responseKeywords))
         {
-            bonus += 4.0; // Bonus para pedidos de ajuda
+            bonus += 4.0;
         }
 
         return bonus;
@@ -203,7 +188,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
 
     private double CalculateRelatedWordsBonus(List<string> messageWords, List<string> responseKeywords)
     {
-        // Palavras relacionadas por contexto
         var relatedGroups = new Dictionary<string[], double>
         {
             [new[] { "preço", "valor", "custo", "quanto", "custa" }] = 2.0,
@@ -227,7 +211,6 @@ public class KeywordBasedResponseStrategy : IBotResponseStrategy
         return 0;
     }
 
-    // Métodos auxiliares para detecção de contexto
     private bool IsGreeting(string message) => 
         new[] { "oi", "ola", "olá", "hello", "hi", "bom dia", "boa tarde", "boa noite" }.Any(g => message.Contains(g));
 

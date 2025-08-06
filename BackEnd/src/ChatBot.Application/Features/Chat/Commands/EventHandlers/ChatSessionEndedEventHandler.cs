@@ -1,14 +1,10 @@
-﻿// Conteúdo COMPLETO e CORRETO para:
-// C:\Desenvolvimento\DesafioCtVoicer\BackEnd\src\ChatBot.Application\Features\Chat\EventHandlers\ChatSessionEndedEventHandler.cs
-
-using MediatR;
+﻿using MediatR;
 using ChatBot.Domain.Events;
 using ChatBot.Application.Common.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-// NAMESPACE CORRETO para esta localização:
 namespace ChatBot.Application.Features.Chat.EventHandlers;
 
 /// <summary>

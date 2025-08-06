@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using ChatBot.Domain.Interfaces;
-using ChatBot.Application.Common.Interfaces; // Necessário para ICurrentUserService
+using ChatBot.Application.Common.Interfaces;
 
 namespace ChatBot.Infrastructure.Data.Interceptors;
 
@@ -12,7 +12,6 @@ public class SoftDeleteInterceptor : SaveChangesInterceptor
 {
     private readonly ICurrentUserService _currentUserService;
 
-    // Construtor para injeção de dependência
     public SoftDeleteInterceptor(ICurrentUserService currentUserService)
     {
         _currentUserService = currentUserService;
@@ -43,10 +42,10 @@ public class SoftDeleteInterceptor : SaveChangesInterceptor
             switch (entry.State)
             {
                 case EntityState.Deleted:
-                    entry.State = EntityState.Modified; // Muda o estado para Modified em vez de Deleted
+                    entry.State = EntityState.Modified;
                     entity.IsDeleted = true;
                     entity.DeletedAt = DateTime.UtcNow;
-                    entity.DeletedBy = currentUserName; // Usar o nome do usuário logado
+                    entity.DeletedBy = currentUserName;
                     break;
             }
         }

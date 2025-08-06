@@ -1,8 +1,7 @@
-// src/components/Navbar.tsx
-'use client'; // Indica que este componente é um Client Component
+'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // Para saber a rota atual
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const pathname = usePathname();

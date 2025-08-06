@@ -49,23 +49,20 @@ public class InactiveSessionCleanupService : BackgroundService
                         if (lastMessage == null) continue;
                         if (now - lastMessage.SentAt > InactivityLimit)
                         {
-                            // Encerrar sessão
                             session.Status = SessionStatus.Ended;
                             session.EndedAt = now;
                             session.UpdatedAt = now;
                             session.UpdatedBy = "System";
                             await chatSessionRepo.UpdateAsync(session, stoppingToken);
 
-                            // Enviar mensagem de saída
                             var exitCommand = new ProcessUserMessageCommand
                             {
                                 ChatSessionId = session.Id,
-                                UserId = Guid.Empty, // Bot
+                                UserId = Guid.Empty,
                                 UserMessage = "sair"
                             };
                             await mediator.Send(exitCommand, stoppingToken);
 
-                            // Notificar o front via SignalR (se disponível)
                             if (signalR != null)
                             {
                                 await signalR.NotifyChatSessionEnded(session.Id, "Sessão encerrada por inatividade.");

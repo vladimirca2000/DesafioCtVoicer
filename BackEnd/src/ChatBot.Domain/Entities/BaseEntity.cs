@@ -15,7 +15,6 @@ public abstract class BaseEntity : ISoftDeletable, IAuditable
     public string CreatedBy { get; set; } = string.Empty;
     public string? UpdatedBy { get; set; }
 
-    // --- Suporte a Domain Events ---
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 

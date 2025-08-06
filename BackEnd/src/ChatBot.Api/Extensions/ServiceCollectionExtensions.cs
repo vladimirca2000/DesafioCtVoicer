@@ -21,10 +21,19 @@ public static class ServiceCollectionExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
 
-        // SignalR
+        
         services.AddSignalR();
 
-        // CORS
+        
+        services.AddHealthChecks()
+            .AddNpgSql(
+                connectionString: configuration.GetConnectionString("DefaultConnection")!,
+                name: "postgresql",
+                tags: new[] { "database", "postgresql" })
+            .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"), 
+                tags: new[] { "api" });
+
+        
         services.AddCors(options =>
         {
             options.AddPolicy("SpecificCorsPolicy", policy =>
@@ -45,11 +54,11 @@ public static class ServiceCollectionExtensions
             });
         });
 
-        // Registro de IHttpContextAccessor e ICurrentUserService
+        
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-        // Registro do serviço SignalR, que está na camada de API
+        
         services.AddScoped<ISignalRChatService, SignalRChatService>();
 
         return services;

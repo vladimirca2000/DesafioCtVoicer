@@ -1,5 +1,4 @@
-﻿// Conteúdo COMPLETO e CORRETO para ChatSessionEndedDomainEvent.cs
-using ChatBot.Domain.Interfaces;
+﻿using ChatBot.Domain.Interfaces;
 using System;
 
 namespace ChatBot.Domain.Events;

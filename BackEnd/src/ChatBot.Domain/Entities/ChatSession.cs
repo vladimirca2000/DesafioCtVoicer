@@ -10,7 +10,7 @@ public class ChatSession : BaseEntity
     public DateTime? EndedAt { get; set; }
     public string? EndReason { get; set; }
 
-    // Navigation Properties
+   
     public virtual User User { get; set; } = null!;
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 }

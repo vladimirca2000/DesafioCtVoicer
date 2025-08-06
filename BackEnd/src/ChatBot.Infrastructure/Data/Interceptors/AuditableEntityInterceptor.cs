@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using ChatBot.Domain.Interfaces;
-using ChatBot.Application.Common.Interfaces; // Necessário para ICurrentUserService
+using ChatBot.Application.Common.Interfaces; 
 
 namespace ChatBot.Infrastructure.Data.Interceptors;
 
@@ -12,7 +12,7 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
     private readonly ICurrentUserService _currentUserService;
 
-    // Construtor para injeção de dependência
+    
     public AuditableEntityInterceptor(ICurrentUserService currentUserService)
     {
         _currentUserService = currentUserService;
@@ -42,12 +42,12 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
             {
                 case EntityState.Added:
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = currentUserName; // Usar o nome do usuário logado
+                    entry.Entity.CreatedBy = currentUserName; 
                     break;
 
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = currentUserName; // Usar o nome do usuário logado
+                    entry.Entity.UpdatedBy = currentUserName; 
                     break;
             }
         }

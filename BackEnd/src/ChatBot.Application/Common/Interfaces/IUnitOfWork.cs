@@ -1,4 +1,4 @@
-﻿using ChatBot.Domain.Interfaces; // Necessário para IDomainEvent
+﻿using ChatBot.Domain.Interfaces; 
 using System.Collections.Generic;
 
 namespace ChatBot.Application.Common.Interfaces;
@@ -10,7 +10,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
 
-    // Novos métodos para Domain Events
+    
     IReadOnlyCollection<IDomainEvent> GetDomainEvents();
     void ClearDomainEvents();
 }

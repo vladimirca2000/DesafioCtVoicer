@@ -1,6 +1,4 @@
-﻿// C:\Desenvolvimento\DocChatBoot\BackEnd\src\ChatBot.Api\Middleware\ExceptionHandlingMiddleware.cs
-
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
@@ -27,37 +25,30 @@ public class ExceptionHandlingMiddleware
     {
         try
         {
-            // Tenta executar a próxima parte do pipeline da requisição
             await _next(context);
         }
         catch (ValidationException ex)
         {
-            // Captura exceções de validação e define resposta apropriada
             await WriteError(context, HttpStatusCode.BadRequest, "Falha de Validação", ex.Message, ex.Errors?.SelectMany(pair => pair.Value).ToList() ?? new List<string> { ex.Message });
         }
         catch (NotFoundException ex)
         {
-            // Captura exceções de recurso não encontrado e define resposta apropriada
             await WriteError(context, HttpStatusCode.NotFound, "Recurso Não Encontrado", ex.Message);
         }
         catch (UnauthorizedException ex)
         {
-            // Captura exceções de não autorizado e define resposta apropriada
             await WriteError(context, HttpStatusCode.Unauthorized, "Não Autorizado", ex.Message);
         }
         catch (ForbiddenException ex)
         {
-            // Captura exceções de acesso proibido e define resposta apropriada
             await WriteError(context, HttpStatusCode.Forbidden, "Acesso Proibido", ex.Message);
         }
         catch (ConflictException ex)
         {
-            // Captura exceções de conflito de dados e define resposta apropriada
             await WriteError(context, HttpStatusCode.Conflict, "Conflito de Dados", ex.Message);
         }
         catch (Exception ex)
         {
-            // Captura qualquer exceção não tratada e a loga
             _logger.LogError(ex, "Erro inesperado no pipeline");
             await WriteError(context, HttpStatusCode.InternalServerError, "Erro Interno do Servidor", ex.Message, new List<string> { "Ocorreu um erro inesperado. Tente novamente mais tarde." });
         }

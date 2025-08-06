@@ -30,13 +30,13 @@ public class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSession>
         builder.Property(x => x.DeletedBy)
             .HasMaxLength(100);
 
-        // Indexes
+        
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.StartedAt);
         builder.HasIndex(x => x.IsDeleted);
 
-        // Relationships
+        
         builder.HasOne(x => x.User)
             .WithMany(x => x.ChatSessions)
             .HasForeignKey(x => x.UserId)

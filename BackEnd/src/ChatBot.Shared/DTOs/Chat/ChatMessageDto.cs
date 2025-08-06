@@ -7,7 +7,7 @@ public class ChatMessageDto
 {
     public Guid Id { get; set; }
     public Guid ChatSessionId { get; set; }
-    public Guid? UserId { get; set; } // Null se for do bot
+    public Guid? UserId { get; set; } 
     public string Content { get; set; } = string.Empty;
     public DateTime SentAt { get; set; }
     public bool IsFromBot { get; set; }

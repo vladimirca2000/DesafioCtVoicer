@@ -1,5 +1,4 @@
-﻿// Conteúdo COMPLETO e CORRETO para ISignalRChatService.cs
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace ChatBot.Application.Common.Interfaces;

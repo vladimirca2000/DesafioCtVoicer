@@ -20,8 +20,7 @@ public class SignalRChatService : ISignalRChatService
 
     public async Task SendMessageToChatSession(Guid chatSessionId, string messageContent, bool isBot, Guid? userId, Guid messageId, DateTime sentAt)
     {
-        // Envia um DTO estruturado para o cliente SignalR
-        // O cliente deve estar conectado ao grupo com o nome da chatSessionId
+        
         await _hubContext.Clients.Group(chatSessionId.ToString()).SendAsync("ReceiveMessage", new
         {
             MessageId = messageId,

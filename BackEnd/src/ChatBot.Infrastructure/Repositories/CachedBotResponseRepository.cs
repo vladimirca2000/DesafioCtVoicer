@@ -14,9 +14,9 @@ namespace ChatBot.Infrastructure.Repositories;
 /// </summary>
 public class CachedBotResponseRepository : IBotResponseRepository
 {
-    private readonly IBotResponseRepository _decoratedRepository; // O repositório original (concreto)
+    private readonly IBotResponseRepository _decoratedRepository; 
     private readonly ICacheService _cacheService;
-    private const string AllBotResponsesCacheKey = "AllBotResponses"; // Chave para cache de todas as respostas
+    private const string AllBotResponsesCacheKey = "AllBotResponses"; 
 
     public CachedBotResponseRepository(IBotResponseRepository decoratedRepository, ICacheService cacheService)
     {
@@ -36,7 +36,7 @@ public class CachedBotResponseRepository : IBotResponseRepository
         var item = await _decoratedRepository.GetByIdAsync(id, cancellationToken);
         if (item != null)
         {
-            await _cacheService.SetAsync(cacheKey, item, TimeSpan.FromMinutes(30)); // Cache por 30 minutos
+            await _cacheService.SetAsync(cacheKey, item, TimeSpan.FromMinutes(30)); 
         }
         return item;
     }
@@ -50,34 +50,34 @@ public class CachedBotResponseRepository : IBotResponseRepository
         }
 
         var items = await _decoratedRepository.GetAllAsync(cancellationToken);
-        await _cacheService.SetAsync(AllBotResponsesCacheKey, items.ToList(), TimeSpan.FromMinutes(30)); // Cache por 30 minutos
+        await _cacheService.SetAsync(AllBotResponsesCacheKey, items.ToList(), TimeSpan.FromMinutes(30)); 
         return items;
     }
 
     public async Task AddAsync(BotResponse entity, CancellationToken cancellationToken = default)
     {
         await _decoratedRepository.AddAsync(entity, cancellationToken);
-        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); // Invalida o cache de todas as respostas
+        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); 
     }
 
     public async Task UpdateAsync(BotResponse entity, CancellationToken cancellationToken = default)
     {
         await _decoratedRepository.UpdateAsync(entity, cancellationToken);
-        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); // Invalida o cache de todas as respostas
-        await _cacheService.RemoveAsync($"BotResponse_{entity.Id}"); // Invalida o cache do item específico
+        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); 
+        await _cacheService.RemoveAsync($"BotResponse_{entity.Id}"); 
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await _decoratedRepository.DeleteAsync(id, cancellationToken);
-        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); // Invalida o cache de todas as respostas
-        await _cacheService.RemoveAsync($"BotResponse_{id}"); // Invalida o cache do item específico
+        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); 
+        await _cacheService.RemoveAsync($"BotResponse_{id}"); 
     }
 
     public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await _decoratedRepository.RestoreAsync(id, cancellationToken);
-        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); // Invalida o cache de todas as respostas
-        await _cacheService.RemoveAsync($"BotResponse_{id}"); // Invalida o cache do item específico
+        await _cacheService.RemoveAsync(AllBotResponsesCacheKey); 
+        await _cacheService.RemoveAsync($"BotResponse_{id}"); 
     }
 }

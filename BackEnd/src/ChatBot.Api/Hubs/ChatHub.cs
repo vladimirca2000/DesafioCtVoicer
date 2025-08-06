@@ -16,8 +16,7 @@ public class ChatHub : Hub
     public async Task JoinChat(string chatSessionId) // Usar string para o ID do grupo SignalR
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, chatSessionId);
-        // Opcional: Enviar uma mensagem de boas-vindas ao usuário que acabou de entrar
-        // await Clients.Caller.SendAsync("ReceiveMessage", new { Content = $"Bem-vindo à sessão {chatSessionId}!" });
+        
     }
 
     /// <summary>
@@ -29,7 +28,4 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, chatSessionId);
     }
 
-    // Métodos que o servidor pode chamar nos clientes (definidos no ISignalRChatService)
-    // Eles não precisam de implementação aqui, apenas a assinatura é suficiente para o SignalR.
-    // O SendAsync no SignalRChatService chama esses métodos pelo nome.
 }

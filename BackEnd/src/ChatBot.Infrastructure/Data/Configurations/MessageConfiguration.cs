@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ChatBot.Domain.Entities;
 using ChatBot.Domain.Enums;
-using ChatBot.Domain.ValueObjects; // Necessário para MessageContent
+using ChatBot.Domain.ValueObjects;
 
 namespace ChatBot.Infrastructure.Data.Configurations;
 
@@ -14,11 +14,10 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
 
         builder.HasKey(x => x.Id);
 
-        // Mapeamento do Value Object MessageContent para string no banco de dados
         builder.Property(x => x.Content)
             .HasConversion(
-                v => v.Value, // Como salvar no banco (MessageContent VO -> string)
-                v => MessageContent.Create(v) // Como carregar do banco (string -> MessageContent VO)
+                v => v.Value,
+                v => MessageContent.Create(v)
             )
             .IsRequired()
             .HasMaxLength(2000);
@@ -37,7 +36,6 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(x => x.DeletedBy)
             .HasMaxLength(100);
 
-        // Indexes
         builder.HasIndex(x => x.ChatSessionId);
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.SentAt);
@@ -45,7 +43,6 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.HasIndex(x => x.IsFromBot);
         builder.HasIndex(x => x.IsDeleted);
 
-        // Relationships
         builder.HasOne(x => x.ChatSession)
             .WithMany(x => x.Messages)
             .HasForeignKey(x => x.ChatSessionId)

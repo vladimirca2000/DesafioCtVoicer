@@ -1,5 +1,4 @@
-﻿// Conteúdo COMPLETO e CORRETO para MessageSentDomainEvent.cs
-using ChatBot.Domain.Interfaces;
+﻿using ChatBot.Domain.Interfaces;
 using System;
 
 namespace ChatBot.Domain.Events;
@@ -11,7 +10,7 @@ public record MessageSentDomainEvent : IDomainEvent
 {
     public Guid MessageId { get; init; }
     public Guid ChatSessionId { get; init; }
-    public Guid? UserId { get; init; } // Pode ser nulo se for mensagem do bot
+    public Guid? UserId { get; init; } 
     public string Content { get; init; } = string.Empty;
     public DateTime SentAt { get; init; }
     public bool IsFromBot { get; init; }

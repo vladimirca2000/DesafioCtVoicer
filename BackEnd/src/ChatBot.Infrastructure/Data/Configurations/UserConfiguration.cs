@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ChatBot.Domain.Entities;
-using ChatBot.Domain.ValueObjects; // Necessário para Email
+using ChatBot.Domain.ValueObjects;
 
 namespace ChatBot.Infrastructure.Data.Configurations;
 
@@ -13,16 +13,14 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasKey(x => x.Id);
 
-        // Properties
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(100);
 
-        // Mapeamento do Value Object Email para string no banco de dados
         builder.Property(x => x.Email)
             .HasConversion(
-                v => v.Value, // Como salvar no banco (Email VO -> string)
-                v => Email.Create(v) // Como carregar do banco (string -> Email VO)
+                v => v.Value,
+                v => Email.Create(v)
             )
             .IsRequired()
             .HasMaxLength(255);
@@ -31,7 +29,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValue(true);
 
-        // Audit Properties
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
@@ -42,7 +39,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.UpdatedBy)
             .HasMaxLength(100);
 
-        // Soft Delete Properties
         builder.Property(x => x.IsDeleted)
             .IsRequired()
             .HasDefaultValue(false);
@@ -50,11 +46,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.DeletedBy)
             .HasMaxLength(100);
 
-        // Indexes - Usando aspas duplas corretas para PostgreSQL
-        builder.HasIndex(x => x.Email) // O índice será aplicado à coluna que armazena o valor (string)
+        builder.HasIndex(x => x.Email)
             .IsUnique()
             .HasDatabaseName("IX_Users_Email_Unique")
-            .HasFilter(@"""IsDeleted"" = false"); // Case-sensitive correto
+            .HasFilter(@"""IsDeleted"" = false");
 
         builder.HasIndex(x => x.IsDeleted)
             .HasDatabaseName("IX_Users_IsDeleted");
@@ -62,7 +57,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(x => x.IsActive)
             .HasDatabaseName("IX_Users_IsActive");
 
-        // Relationships
         builder.HasMany(x => x.ChatSessions)
             .WithOne(x => x.User)
             .HasForeignKey(x => x.UserId)

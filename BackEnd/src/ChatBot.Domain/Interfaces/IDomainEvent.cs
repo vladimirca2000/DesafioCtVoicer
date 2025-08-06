@@ -1,4 +1,4 @@
-﻿using MediatR; // Necessário para INotification
+﻿using MediatR; 
 
 namespace ChatBot.Domain.Interfaces;
 
