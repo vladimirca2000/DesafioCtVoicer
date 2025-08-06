@@ -1,11 +1,11 @@
 ﻿// C:\Desenvolvimento\DocChatBoot\BackEnd\src\ChatBot.Api\Middleware\ExceptionHandlingMiddleware.cs
 
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
 using ChatBot.Application.Common.Exceptions;
 using ChatBot.Shared.DTOs.General;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace ChatBot.Api.Middleware;
 
@@ -30,71 +30,51 @@ public class ExceptionHandlingMiddleware
             // Tenta executar a próxima parte do pipeline da requisição
             await _next(context);
         }
+        catch (ValidationException ex)
+        {
+            // Captura exceções de validação e define resposta apropriada
+            await WriteError(context, HttpStatusCode.BadRequest, "Falha de Validação", ex.Message, ex.Errors?.SelectMany(pair => pair.Value).ToList() ?? new List<string> { ex.Message });
+        }
+        catch (NotFoundException ex)
+        {
+            // Captura exceções de recurso não encontrado e define resposta apropriada
+            await WriteError(context, HttpStatusCode.NotFound, "Recurso Não Encontrado", ex.Message);
+        }
+        catch (UnauthorizedException ex)
+        {
+            // Captura exceções de não autorizado e define resposta apropriada
+            await WriteError(context, HttpStatusCode.Unauthorized, "Não Autorizado", ex.Message);
+        }
+        catch (ForbiddenException ex)
+        {
+            // Captura exceções de acesso proibido e define resposta apropriada
+            await WriteError(context, HttpStatusCode.Forbidden, "Acesso Proibido", ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            // Captura exceções de conflito de dados e define resposta apropriada
+            await WriteError(context, HttpStatusCode.Conflict, "Conflito de Dados", ex.Message);
+        }
         catch (Exception ex)
         {
             // Captura qualquer exceção não tratada e a loga
-            _logger.LogError(ex, "Ocorreu uma exceção não tratada durante a requisição: {Message}", ex.Message);
-
-            // Chama o método para lidar com a exceção e gerar a resposta HTTP
-            await HandleExceptionAsync(context, ex);
+            _logger.LogError(ex, "Erro inesperado no pipeline");
+            await WriteError(context, HttpStatusCode.InternalServerError, "Erro Interno do Servidor", ex.Message, new List<string> { "Ocorreu um erro inesperado. Tente novamente mais tarde." });
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task WriteError(HttpContext context, HttpStatusCode status, string title, string detail, List<string>? messages = null)
     {
-        // Define o tipo de conteúdo da resposta como JSON
+        _logger.LogWarning($"Retornando erro {status}: {title} - {detail}");
+        context.Response.StatusCode = (int)status;
         context.Response.ContentType = "application/json";
-
-        // Inicializa o status code e o objeto de resposta de erro com valores padrão para erro interno do servidor (500)
-        var statusCode = HttpStatusCode.InternalServerError;
         var errorResponse = new ErrorResponse
         {
-            Title = "Ocorreu um erro interno no servidor.",
-            Status = (int)statusCode,
-            Detail = "Por favor, tente novamente mais tarde. Se o problema persistir, contate o suporte.",
-            Messages = new List<string> { "Por favor, tente novamente mais tarde. Se o problema persistir, contate o suporte." }
+            Title = title,
+            Status = (int)status,
+            Detail = detail,
+            Messages = messages ?? new List<string> { detail }
         };
-
-        // Usa um switch para tratar diferentes tipos de exceção
-        switch (exception)
-        {
-            case ValidationException validationException:
-                // Erros de validação (FluentValidation)
-                statusCode = HttpStatusCode.BadRequest; // 400 Bad Request
-                errorResponse.Title = "Erro de Validação";
-                errorResponse.Detail = "Um ou mais erros de validação ocorreram na sua requisição.";
-                errorResponse.Errors = validationException.Errors; // Dicionário de erros por campo
-                errorResponse.Messages = validationException.Errors.SelectMany(e => e.Value).ToList(); // Lista plana de todas as mensagens de erro
-                break;
-
-            case NotFoundException notFoundException: // <--- Seu código já trata essa exceção e informa 404!
-                // Recurso não encontrado
-                statusCode = HttpStatusCode.NotFound; // 404 Not Found
-                errorResponse.Title = "Recurso Não Encontrado";
-                errorResponse.Detail = notFoundException.Message;
-                errorResponse.Messages = new List<string> { notFoundException.Message };
-                break;
-
-            case BusinessRuleException businessRuleException:
-                // Erros de regra de negócio
-                statusCode = HttpStatusCode.BadRequest; // 400 Bad Request (poderia ser 422 Unprocessable Entity para ser mais específico)
-                errorResponse.Title = "Violação de Regra de Negócio";
-                errorResponse.Detail = businessRuleException.Message;
-                errorResponse.Messages = new List<string> { businessRuleException.Message };
-                break;
-
-            // Default: para qualquer outra exceção não tratada, mantém 500 Internal Server Error
-            default:
-                break;
-        }
-
-        // Define o status code da resposta HTTP
-        context.Response.StatusCode = (int)statusCode;
-
-        // Serializa o objeto de resposta de erro para JSON
-        var jsonResponse = JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-        // Escreve a resposta JSON no corpo da resposta HTTP
-        await context.Response.WriteAsync(jsonResponse);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
     }
 }

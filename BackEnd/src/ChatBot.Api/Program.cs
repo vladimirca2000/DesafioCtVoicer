@@ -4,6 +4,7 @@ using Serilog;
 using ChatBot.Infrastructure.Data; // Adicione este using para ChatBotDbContext
 using Microsoft.EntityFrameworkCore; // Adicione este using para o mtodo Migrate()
 using ChatBot.Api.Extensions; // Adicione este using para os mtodos de extenso da API
+using ChatBot.Infrastructure.Services; // Adicionando using para o serviço de background
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,9 @@ builder.Services.AddSwaggerGen();
 // SignalR (aqui ficar apenas o MapHub, o registro do servio ser via AddApiServices)
 builder.Services.AddSignalR();
 
+// Adiciona o serviço de limpeza de sessões inativas
+builder.Services.AddHostedService<InactiveSessionCleanupService>();
+
 // Chamada crucial para registrar os servios especficos da camada de API, incluindo SignalR e ICurrentUserService.
 // Isso inclui o CORS configurado em ServiceCollectionExtensions.
 builder.Services.AddApiServices(builder.Configuration); // <--- LINHA ADICIONADA/ALTERADA AQUI!
@@ -33,7 +37,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-
+// Adiciona o middleware global de tratamento de exceções
+app.UseMiddleware<ChatBot.Api.Middleware.ExceptionHandlingMiddleware>();
 {
     using (var scope = app.Services.CreateScope()) 
     {

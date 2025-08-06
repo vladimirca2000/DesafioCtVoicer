@@ -22,8 +22,12 @@ const apiClient = axios.create({
 // Interceptador de requisição
 apiClient.interceptors.request.use(
   (config) => {
-    // Adicionar logs para debug
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    // Adicionar logs para debug com timestamp, mas filtrar OPTIONS
+    if (config.method?.toUpperCase() !== 'OPTIONS') {
+      const timestamp = new Date().toISOString();
+      console.log(`🚀 [${timestamp}] API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`🚀 [${timestamp}] Request data:`, config.data);
+    }
     return config;
   },
   (error) => {
@@ -35,7 +39,17 @@ apiClient.interceptors.request.use(
 // Interceptador de resposta
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    // Filtrar logs de preflight requests (OPTIONS que retornam 204)
+    if (!(response.config.method?.toUpperCase() === 'OPTIONS' && response.status === 204)) {
+      const timestamp = new Date().toISOString();
+      console.log(`✅ [${timestamp}] API Response: ${response.status} ${response.config.url}`);
+      console.log(`✅ [${timestamp}] Response data:`, response.data);
+      
+      // Log especial para identificar preflight vs requisição real
+      if (response.config.method?.toUpperCase() === 'POST' && response.status === 201) {
+        console.log(`🎯 [${timestamp}] *** CRIAÇÃO BEM-SUCEDIDA (201) ***`);
+      }
+    }
     return response;
   },
   (error) => {

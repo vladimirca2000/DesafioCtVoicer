@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Send } from 'lucide-react'; // Ícones
-import { useAppSelector, useAppDispatch, setUser, setChatSession, addMessage, setChatStatus, setChatError, clearChat, Message } from '@/store/store'; // Adicionado 'Message' import
+import { useAppSelector, useAppDispatch, setUser, setChatSession, addMessage, setChatStatus, setChatError, clearChat, clearUser, Message } from '@/store/store'; // Adicionado 'Message' import
 import Image from 'next/image'; // Para usar a imagem customizada
 
 // Importações dos componentes Shadcn UI (assumindo que foram adicionados via npx shadcn-ui add)
@@ -24,6 +24,7 @@ export default function ChatWidget() {
   const [emailInput, setEmailInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false); // Novo estado para evitar duplo submit
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
@@ -38,6 +39,8 @@ export default function ChatWidget() {
     console.log('🔄 Chat está aberto:', isChatOpen);
     console.log('🔄 Session ID atual:', sessionId);
     console.log('🔄 Usuário autenticado:', isAuthenticated);
+    console.log('🔄 User ID atual:', userId);
+    console.log('🔄 User Name atual:', userName);
     
     // Focar no campo de input quando o status for 'open' e o chat estiver aberto
     if (status === 'open' && isChatOpen) {
@@ -45,7 +48,7 @@ export default function ChatWidget() {
         messageInputRef.current?.focus();
       }, 100);
     }
-  }, [status, isChatOpen]);
+  }, [status, isChatOpen, sessionId, isAuthenticated, userId, userName]);
 
   useEffect(() => {
     console.log('🔧 SignalR useEffect executado:', { isChatOpen, sessionId, hasConnection: !!connectionRef.current });
@@ -83,6 +86,7 @@ export default function ChatWidget() {
         
         console.log('🔔 Executando clearChat() e setIsChatOpen(false)');
         dispatch(clearChat()); // Limpa o estado da sessão e fecha o chat
+        dispatch(clearUser()); // Limpa dados do usuário (força reautenticação)
         setIsChatOpen(false);
       });
 
@@ -214,14 +218,33 @@ export default function ChatWidget() {
 
       // Usuário válido e ativo - recuperar dados
       console.log('✅ Usuário válido encontrado:', userData);
-      console.log('🔍 ID do usuário:', userData.id); // Usar 'id' conforme estrutura real
+      console.log('🔍 Estrutura COMPLETA do userData (email existente):', JSON.stringify(userData, null, 2));
+      console.log('🔍 Propriedades disponíveis:', Object.keys(userData));
+      
+      // Verificar qual propriedade contém o ID do usuário
+      const userIdRaw = userData.id || userData.userId || userData.ID || userData.UserId;
+      const userId = userIdRaw ? String(userIdRaw) : null; // Garantir que seja string
+      console.log('🔍 ID bruto do usuário:', userIdRaw);
+      console.log('🔍 Tipo do ID bruto:', typeof userIdRaw);
+      console.log('🔍 ID convertido para string:', userId);
+      console.log('🔍 Tipo do ID convertido:', typeof userId);
       console.log('🔍 Nome do usuário:', userData.name);
       console.log('🔍 Email do usuário:', userData.email);
+      
+      if (!userId || userId === 'null' || userId === 'undefined') {
+        console.error('❌ ERRO CRÍTICO: Nenhum ID de usuário válido encontrado (email existente)');
+        console.error('❌ ID bruto:', userIdRaw);
+        console.error('❌ ID convertido:', userId);
+        console.error('❌ Propriedades testadas: id, userId, ID, UserId');
+        console.error('❌ Estrutura completa:', userData);
+        dispatch(setChatError('Erro: ID do usuário não retornado pela API.'));
+        return;
+      }
       
       try {
         console.log('🔄 Salvando dados do usuário no Redux...');
         dispatch(setUser({ 
-          id: userData.id, // Usar 'id' conforme estrutura real
+          id: userId, // Usar o ID detectado
           name: userData.name, 
           email: userData.email 
         }));
@@ -235,14 +258,14 @@ export default function ChatWidget() {
       // Verificar se há sessão ativa existente ou iniciar nova
       console.log('🔍 Iniciando verificação de sessão para usuário autenticado...');
       try {
-        await checkOrStartChatSession(userData.id, userData.name); // Usar 'id' conforme estrutura real
+        await checkOrStartChatSession(userId, userData.name); // Usar o ID detectado
         console.log('✅ Processo de verificação/início de sessão concluído');
-        dispatch(setChatStatus('open'));
+        // Não é necessário chamar setChatStatus('open') pois setChatSession já faz isso
       } catch (sessionError: any) {
         console.error('❌ Erro CAPTURADO na verificação de sessão:', sessionError);
         // Este erro pode estar sendo lançado pela checkOrStartChatSession
         dispatch(setChatError('Erro ao verificar sessão de chat.'));
-        // Ainda permite abrir o chat mesmo com erro de sessão
+        // Força status open mesmo com erro de sessão para permitir tentativa manual
         dispatch(setChatStatus('open'));
       }
     } catch (apiError: any) {
@@ -288,36 +311,125 @@ export default function ChatWidget() {
   };
 
   const handleRegisterUser = async () => {
+    console.log('🚀 === INICIO handleRegisterUser ===');
+    
+    // Prevenir chamadas duplas
+    if (isRegistering) {
+      console.log('⚠️ handleRegisterUser já está em execução, ignorando chamada dupla');
+      return;
+    }
+    
+    setIsRegistering(true);
     dispatch(setChatError(null));
+    
     if (!nameInput) {
       dispatch(setChatError('Por favor, insira um nome.'));
+      setIsRegistering(false);
       return;
     }
 
     try {
       // 2. Cadastrar novo usuário
+      console.log('📝 Enviando dados para cadastro:', {
+        name: nameInput,
+        email: emailInput,
+        isActive: true
+      });
+      
+      console.log('📤 Fazendo requisição POST para /Users...');
+      console.log('ℹ️ NOTA: Você pode ver um 204 seguido de 201 - isso é normal (CORS preflight + requisição real)');
+      
       const registerResponse = await apiClient.post(`/Users`, {
         name: nameInput,
         email: emailInput,
         isActive: true, // Ou defina a lógica de ativação
       });
+      
+      console.log('📡 Status da resposta de cadastro:', registerResponse.status);
+      console.log('📡 Headers da resposta de cadastro:', registerResponse.headers);
+      console.log('📡 Dados brutos da resposta de cadastro:', registerResponse.data);
+      console.log('📡 Config da requisição:', registerResponse.config?.url);
+      
+      // Verificar se é status 201 (Created) como esperado
+      if (registerResponse.status !== 201) {
+        console.warn('⚠️ Status de resposta inesperado:', registerResponse.status);
+        console.warn('⚠️ Esperado: 201 (Created), Recebido:', registerResponse.status);
+      }
+      
       const userData = registerResponse.data; // Backend retorna objeto diretamente, não Result<T>
       
       // Usuário criado com sucesso - recuperar dados (mesmo comportamento do email existente)
       console.log('✅ Usuário criado com sucesso:', userData);
+      console.log('🔍 Estrutura COMPLETA do userData:', JSON.stringify(userData, null, 2));
+      console.log('🔍 Propriedades disponíveis:', Object.keys(userData));
+      console.log('🔍 Estrutura detalhada do userData:', {
+        id: userData.id,
+        userId: userData.userId,
+        name: userData.name,
+        email: userData.email,
+        isActive: userData.isActive
+      });
+      
+      // Verificar qual propriedade contém o ID do usuário
+      const userIdRaw = userData.id || userData.userId || userData.ID || userData.UserId;
+      const userId = userIdRaw ? String(userIdRaw) : null; // Garantir que seja string
+      console.log('🔍 ID bruto do usuário:', userIdRaw);
+      console.log('🔍 Tipo do ID bruto:', typeof userIdRaw);
+      console.log('🔍 ID convertido para string:', userId);
+      console.log('🔍 Tipo do ID convertido:', typeof userId);
+      
+      if (!userId || userId === 'null' || userId === 'undefined') {
+        console.error('❌ ERRO CRÍTICO: Nenhum ID de usuário válido encontrado');
+        console.error('❌ ID bruto:', userIdRaw);
+        console.error('❌ ID convertido:', userId);
+        console.error('❌ Propriedades testadas: id, userId, ID, UserId');
+        console.error('❌ Estrutura completa:', userData);
+        dispatch(setChatError('Erro: ID do usuário não retornado pela API.'));
+        setIsRegistering(false);
+        return;
+      }
+      
+      console.log('🔄 Salvando dados do usuário recém-criado no Redux...');
       dispatch(setUser({ 
-        id: userData.id, // Usar 'id' conforme estrutura real
+        id: userId, // Usar o ID detectado
         name: userData.name, 
         email: userData.email 
       }));
+      console.log('✅ Dados do usuário recém-criado salvos no Redux');
+      console.log('🔍 Estado após salvamento - isAuthenticated deveria ser true agora');
+      
+      // IMPORTANTE: Aguardar um momento para o Redux atualizar o estado
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Verificar se há sessão ativa existente ou iniciar nova (mesmo fluxo do email existente)
       console.log('🔍 Iniciando verificação de sessão para usuário recém-criado...');
-      await checkOrStartChatSession(userData.id, userData.name); // Usar 'id' conforme estrutura real
-      console.log('✅ Processo de verificação/início de sessão concluído para novo usuário');
-      dispatch(setChatStatus('open'));
+      console.log('🔍 ID que será usado:', userId);
+      console.log('🔍 Nome que será usado:', userData.name);
+      
+      try {
+        await checkOrStartChatSession(userId, userData.name); // Usar o ID detectado
+        console.log('✅ Processo de verificação/início de sessão concluído para novo usuário');
+        
+        // Limpar inputs após sucesso
+        setEmailInput('');
+        setNameInput('');
+        
+        // Não é necessário chamar setChatStatus('open') pois setChatSession já faz isso
+        console.log('✅ Usuário registrado e chat configurado com sucesso');
+        
+      } catch (sessionError: any) {
+        console.error('❌ Erro CAPTURADO na verificação de sessão para novo usuário:', sessionError);
+        // Este erro pode estar sendo lançado pela checkOrStartChatSession
+        dispatch(setChatError('Erro ao iniciar sessão de chat para novo usuário.'));
+        // Força status open mesmo com erro de sessão para permitir tentativa manual
+        dispatch(setChatStatus('open'));
+      }
+      
+      console.log('🚀 === FIM handleRegisterUser (sucesso) ===');
+      setIsRegistering(false); // Liberar para próximas tentativas
       
     } catch (apiError: any) {
+      console.error('❌ === ERRO handleRegisterUser ===');
       console.error('Erro ao registrar usuário:', apiError);
       
       if (apiError.response && apiError.response.data) {
@@ -343,16 +455,26 @@ export default function ChatWidget() {
         console.error('❌ Erro sem resposta da API');
         dispatch(setChatError('Erro de conexão. Tente novamente.'));
       }
+      
+      console.log('🚀 === FIM handleRegisterUser (erro) ===');
+      setIsRegistering(false); // Liberar para próximas tentativas
     }
   };
 
   const checkOrStartChatSession = async (currentUserId: string, currentUserName: string | null) => {
     console.log('🔍 === INICIO checkOrStartChatSession ===');
     console.log('🔍 Parâmetros recebidos:', { currentUserId, currentUserName });
+    console.log('🔍 Tipo do currentUserId:', typeof currentUserId);
+    console.log('🔍 currentUserId é null?', currentUserId === null);
+    console.log('🔍 currentUserId é undefined?', currentUserId === undefined);
+    console.log('🔍 currentUserId é string vazia?', currentUserId === '');
+    console.log('🔍 currentUserId convertido para string:', String(currentUserId));
     
     // Verificar se os parâmetros são válidos
-    if (!currentUserId) {
+    if (!currentUserId || currentUserId === 'null' || currentUserId === 'undefined') {
       console.error('❌ currentUserId é inválido:', currentUserId);
+      console.error('❌ Tipo:', typeof currentUserId);
+      console.error('❌ Valor convertido para string:', String(currentUserId));
       dispatch(setChatError('ID do usuário inválido.'));
       return;
     }
@@ -615,7 +737,8 @@ export default function ChatWidget() {
             // Aguardar um pouco para mostrar a mensagem de despedida
             setTimeout(() => {
               console.log('🚪 Fechando chat e limpando estado...');
-              dispatch(clearChat());
+              dispatch(clearChat()); // Limpa dados da sessão
+              dispatch(clearUser()); // Limpa dados do usuário (força reautenticação)
               setIsChatOpen(false);
             }, 1500);
             
@@ -773,14 +896,18 @@ export default function ChatWidget() {
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                   className="mb-3"
-                  onKeyPress={(e) => e.key === 'Enter' && handleRegisterUser()}
+                  disabled={isRegistering}
+                  onKeyPress={(e) => e.key === 'Enter' && !isRegistering && handleRegisterUser()}
                 />
                 <Button 
                   onClick={handleRegisterUser} 
                   className="w-full bg-red-600 hover:bg-red-700"
-                  disabled={!nameInput}
+                  disabled={!nameInput || isRegistering}
                 >
-                  {error?.includes('não está ativo') ? 'Reativar Conta' : 'Cadastrar e Iniciar Chat'}
+                  {isRegistering 
+                    ? '⏳ Registrando...'
+                    : (error?.includes('não está ativo') ? 'Reativar Conta' : 'Cadastrar e Iniciar Chat')
+                  }
                 </Button>
               </div>
             )}

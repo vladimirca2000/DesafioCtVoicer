@@ -1,8 +1,11 @@
 ﻿using ChatBot.Domain.Entities;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ChatBot.Domain.Repositories;
 
 public interface IMessageRepository : IBaseRepository<Message>
 {
-    // Adicionar métodos específicos para Message, se necessário
+    Task<Message?> GetLastMessageInSessionAsync(Guid chatSessionId, CancellationToken cancellationToken = default);
 }
