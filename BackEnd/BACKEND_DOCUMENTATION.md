@@ -166,13 +166,18 @@ flowchart TD
     UsersController --> Mediator
     BotController --> Mediator
     
-    subgraph "Commands (Write Side)"
-        Mediator --> SendMessageCH[SendMessageCommandHandler]
-        Mediator --> StartChatCH[StartChatSessionCommandHandler]
-        Mediator --> EndChatCH[EndChatSessionCommandHandler]
-        Mediator --> CreateUserCH[CreateUserCommandHandler]
-        Mediator --> UpdateUserCH[UpdateUserStatusCommandHandler]
-        Mediator --> ProcessMessageCH[ProcessUserMessageCommandHandler]
+    Mediator --> CommandSide{Command Side}
+    Mediator --> QuerySide{Query Side}
+    
+    subgraph "Commands - Write Side"
+        CommandSide --> SendMessageCH[SendMessageCommandHandler]
+        CommandSide --> StartChatCH[StartChatSessionCommandHandler]
+        CommandSide --> EndChatCH[EndChatSessionCommandHandler]
+        
+        CommandSide --> CreateUserCH[CreateUserCommandHandler]
+        CommandSide --> UpdateUserCH[UpdateUserStatusCommandHandler]
+        
+        CommandSide --> ProcessMessageCH[ProcessUserMessageCommandHandler]
         
         SendMessageCH --> SendMsgValidator[SendMessageValidator]
         StartChatCH --> StartChatValidator[StartChatValidator]
@@ -186,12 +191,14 @@ flowchart TD
         ProcessMessageCH --> WriteRepos
     end
     
-    subgraph "Queries (Read Side)"
-        Mediator --> GetChatHistoryQH[GetChatHistoryQueryHandler]
-        Mediator --> GetActiveSessionsQH[GetActiveSessionsQueryHandler]
-        Mediator --> GetUserByIdQH[GetUserByIdQueryHandler]
-        Mediator --> GetUserByEmailQH[GetUserByEmailQueryHandler]
-        Mediator --> GetBotConfigQH[GetBotConfigurationQueryHandler]
+    subgraph "Queries - Read Side"
+        QuerySide --> GetChatHistoryQH[GetChatHistoryQueryHandler]
+        QuerySide --> GetActiveSessionsQH[GetActiveSessionsQueryHandler]
+        
+        QuerySide --> GetUserByIdQH[GetUserByIdQueryHandler]
+        QuerySide --> GetUserByEmailQH[GetUserByEmailQueryHandler]
+        
+        QuerySide --> GetBotConfigQH[GetBotConfigurationQueryHandler]
         
         GetChatHistoryQH --> ReadRepos[Read Repositories]
         GetActiveSessionsQH --> ReadRepos
@@ -200,9 +207,10 @@ flowchart TD
         GetBotConfigQH --> ReadRepos
     end
     
-    subgraph "Repositories & Data"
+    subgraph "Data Layer"
         WriteRepos --> UnitOfWork[Unit of Work]
         UnitOfWork --> WriteDB[(SQL Server - Write)]
+        
         ReadRepos --> ReadDB[(SQL Server - Read)]
         
         WriteRepos -.->|IMessageRepository| MessageRepo[Message Repository]
@@ -210,20 +218,24 @@ flowchart TD
         WriteRepos -.->|IUserRepository| UserRepo[User Repository]
     end
     
-    subgraph "Domain Events & Handlers"
+    subgraph "Event Processing"
         UnitOfWork --> DomainEvents[Domain Events Publisher]
+        
         DomainEvents --> MessageSentEH[MessageSentEventHandler]
         DomainEvents --> BotAutoResponseEH[BotAutoResponseEventHandler]
         DomainEvents --> ChatSessionEndedEH[ChatSessionEndedEventHandler]
         
-        MessageSentEH --> SignalR[SignalR Hub]
-        BotAutoResponseEH --> SignalR
-        ChatSessionEndedEH --> SignalR
+        MessageSentEH --> SignalRService[SignalR Service]
+        BotAutoResponseEH --> SignalRService
+        ChatSessionEndedEH --> SignalRService
     end
     
-    SignalR --> ConnectedClients[Clientes Conectados]
+    subgraph "Real-time Communication"
+        SignalRService --> ChatHub[Chat Hub]
+        ChatHub --> ConnectedClients[Clientes Conectados via WebSocket]
+    end
     
-    WriteDB -.->|Entity Framework| ReadDB
+    WriteDB -.->|Sincronização via EF Core| ReadDB
 ```
 
 ### **Factory Pattern**
