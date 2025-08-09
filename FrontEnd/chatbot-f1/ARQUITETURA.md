@@ -630,19 +630,19 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    A[SignalR Connection Created] --> B[connection.start()]
-    B --> C[connection.invoke('JoinChat', sessionId)]
-    C --> D[Listen: 'ReceiveMessage']
-    C --> E[Listen: 'ChatSessionEnded']
+    A[SignalR Connection Created] --> B[connection start]
+    B --> C[invoke JoinChat with sessionId]
+    C --> D[Listen ReceiveMessage]
+    C --> E[Listen ChatSessionEnded]
     
-    F[Mensagem enviada por outro usuário] --> G[Backend emite 'ReceiveMessage']
-    G --> H[ChatWidget recebe evento]
-    H --> I[dispatch(addMessage(receivedMessage))]
+    F[Message sent by other user] --> G[Backend emits ReceiveMessage]
+    G --> H[ChatWidget receives event]
+    H --> I[dispatch addMessage]
     
-    J[Sessão encerrada pelo admin] --> K[Backend emite 'ChatSessionEnded']
-    K --> L[ChatWidget recebe evento]
-    L --> M[dispatch(clearChat + clearUser)]
-    M --> N[setIsChatOpen(false)]
+    J[Session ended by admin] --> K[Backend emits ChatSessionEnded]
+    K --> L[ChatWidget receives event]  
+    L --> M[dispatch clearChat and clearUser]
+    M --> N[setIsChatOpen to false]
 ```
 
 **Event Handlers SignalR**:
