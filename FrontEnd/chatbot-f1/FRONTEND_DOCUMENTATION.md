@@ -196,23 +196,20 @@ Para dúvidas ou contribuições, consulte a equipe de desenvolvimento.
 O diagrama de atividade abaixo ilustra o fluxo de interação do usuário com o front-end e a comunicação com o back-end:
 
 ```mermaid
-activityDiagram
-start
-:Usuário interage com a interface;
-if (Evento capturado?) then (Sim)
-  :Disparar evento no React;
-  :Chamar função de serviço;
-  :Enviar requisição HTTP ao back-end;
-  if (Resposta recebida?) then (Sim)
-    :Atualizar estado do React;
-    :Renderizar interface atualizada;
-  else (Não)
-    :Exibir mensagem de erro;
-  endif
-else (Não)
-  :Aguardar nova interação;
-endif
-stop
+flowchart TD
+start([Início]) --> interacao[Usuário interage com a interface]
+interacao --> decisao{Evento capturado?}
+decisao -- Sim --> evento[Disparar evento no React]
+evento --> servico[Chamar função de serviço]
+servico --> requisicao[Enviar requisição HTTP ao back-end]
+requisicao --> resposta{Resposta recebida?}
+resposta -- Sim --> atualizar[Atualizar estado do React]
+atualizar --> renderizar[Renderizar interface atualizada]
+resposta -- Não --> erro[Exibir mensagem de erro]
+erro --> fim([Fim])
+renderizar --> fim
+decisao -- Não --> aguardar[Aguardar nova interação]
+aguardar --> fim
 ```
 
 ### Diagrama de Sequência

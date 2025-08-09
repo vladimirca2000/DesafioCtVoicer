@@ -158,10 +158,10 @@ O **CQRS** separa as operações de leitura e escrita em diferentes modelos, oti
 
 ```mermaid
 flowchart LR
-Command[Comando (Write)] -->|Atualiza| WriteModel[Modelo de Escrita]
-Query[Consulta (Read)] -->|Lê| ReadModel[Modelo de Leitura]
-WriteModel --> Database[(Banco de Dados)]
-ReadModel --> Database[(Banco de Dados)]
+    Command[Comando Write] --> WriteModel[Modelo de Escrita]
+    Query[Consulta Read] --> ReadModel[Modelo de Leitura]
+    WriteModel --> Database[Banco de Dados]
+    ReadModel --> Database
 ```
 
 ### **Factory Pattern**
