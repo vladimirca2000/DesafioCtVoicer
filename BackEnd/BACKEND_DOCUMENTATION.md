@@ -157,11 +157,73 @@ O **CQRS** separa as operações de leitura e escrita em diferentes modelos, oti
 #### Diagrama do CQRS
 
 ```mermaid
-flowchart LR
-    Command[Comando Write] --> WriteModel[Modelo de Escrita]
-    Query[Consulta Read] --> ReadModel[Modelo de Leitura]
-    WriteModel --> Database[Banco de Dados]
-    ReadModel --> Database
+flowchart TD
+    Client[Cliente Web/Mobile] --> ChatController[ChatController]
+    Client --> UsersController[UsersController]
+    Client --> BotController[BotController]
+    
+    ChatController --> Mediator[MediatR]
+    UsersController --> Mediator
+    BotController --> Mediator
+    
+    subgraph "Commands (Write Side)"
+        Mediator --> SendMessageCH[SendMessageCommandHandler]
+        Mediator --> StartChatCH[StartChatSessionCommandHandler]
+        Mediator --> EndChatCH[EndChatSessionCommandHandler]
+        Mediator --> CreateUserCH[CreateUserCommandHandler]
+        Mediator --> UpdateUserCH[UpdateUserStatusCommandHandler]
+        Mediator --> ProcessMessageCH[ProcessUserMessageCommandHandler]
+        
+        SendMessageCH --> SendMsgValidator[SendMessageValidator]
+        StartChatCH --> StartChatValidator[StartChatValidator]
+        EndChatCH --> EndChatValidator[EndChatValidator]
+        
+        SendMsgValidator --> WriteRepos[Write Repositories]
+        StartChatValidator --> WriteRepos
+        EndChatValidator --> WriteRepos
+        CreateUserCH --> WriteRepos
+        UpdateUserCH --> WriteRepos
+        ProcessMessageCH --> WriteRepos
+    end
+    
+    subgraph "Queries (Read Side)"
+        Mediator --> GetChatHistoryQH[GetChatHistoryQueryHandler]
+        Mediator --> GetActiveSessionsQH[GetActiveSessionsQueryHandler]
+        Mediator --> GetUserByIdQH[GetUserByIdQueryHandler]
+        Mediator --> GetUserByEmailQH[GetUserByEmailQueryHandler]
+        Mediator --> GetBotConfigQH[GetBotConfigurationQueryHandler]
+        
+        GetChatHistoryQH --> ReadRepos[Read Repositories]
+        GetActiveSessionsQH --> ReadRepos
+        GetUserByIdQH --> ReadRepos
+        GetUserByEmailQH --> ReadRepos
+        GetBotConfigQH --> ReadRepos
+    end
+    
+    subgraph "Repositories & Data"
+        WriteRepos --> UnitOfWork[Unit of Work]
+        UnitOfWork --> WriteDB[(SQL Server - Write)]
+        ReadRepos --> ReadDB[(SQL Server - Read)]
+        
+        WriteRepos -.->|IMessageRepository| MessageRepo[Message Repository]
+        WriteRepos -.->|IChatSessionRepository| ChatRepo[ChatSession Repository]
+        WriteRepos -.->|IUserRepository| UserRepo[User Repository]
+    end
+    
+    subgraph "Domain Events & Handlers"
+        UnitOfWork --> DomainEvents[Domain Events Publisher]
+        DomainEvents --> MessageSentEH[MessageSentEventHandler]
+        DomainEvents --> BotAutoResponseEH[BotAutoResponseEventHandler]
+        DomainEvents --> ChatSessionEndedEH[ChatSessionEndedEventHandler]
+        
+        MessageSentEH --> SignalR[SignalR Hub]
+        BotAutoResponseEH --> SignalR
+        ChatSessionEndedEH --> SignalR
+    end
+    
+    SignalR --> ConnectedClients[Clientes Conectados]
+    
+    WriteDB -.->|Entity Framework| ReadDB
 ```
 
 ### **Factory Pattern**
