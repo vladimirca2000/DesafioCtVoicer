@@ -112,7 +112,7 @@ C -->|Resposta| B
 ```mermaid
 graph LR
 subgraph Front-End
-A[Usuário] -->|Evento (ex: clique)| B[Componente React]
+A[Usuário] -->|Evento| B[Componente React]
 B -->|Chamada de API| C[Função de Serviço]
 end
 

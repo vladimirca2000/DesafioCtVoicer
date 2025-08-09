@@ -161,7 +161,7 @@ flowchart LR
 Command[Comando (Write)] -->|Atualiza| WriteModel[Modelo de Escrita]
 Query[Consulta (Read)] -->|Lê| ReadModel[Modelo de Leitura]
 WriteModel --> Database[(Banco de Dados)]
-ReadModel --> Database
+ReadModel --> Database[(Banco de Dados)]
 ```
 
 ### **Factory Pattern**
